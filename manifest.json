@@ -6,7 +6,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f9f9f8",
-  "theme_color": "#1a1a18",
+  "theme_color": "#f9f9f8",
   "categories": [
     "education",
     "productivity"
@@ -29,17 +29,17 @@
     {
       "name": "Overview",
       "short_name": "Overview",
-      "url": "./index.html"
+      "url": "./index.html?tab=dashboard"
     },
     {
       "name": "Log Session",
       "short_name": "Deploy",
-      "url": "./index.html"
+      "url": "./index.html?tab=deploy"
     },
     {
       "name": "Deep Work",
       "short_name": "Focus",
-      "url": "./index.html"
+      "url": "./index.html?tab=focus"
     }
   ]
 }
