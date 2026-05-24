@@ -25,8 +25,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
@@ -587,10 +587,76 @@
       gap: 12px;
       box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
     }
+    @media (max-width: 768px) {
+      .install-banner { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    }
     [data-theme="dark"] .install-banner { box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4); }
     .install-banner-title { font-size: 14px; font-weight: 500; color: var(--text); font-family: 'DM Sans', sans-serif; }
     .install-banner-sub { font-size: 12px; color: var(--text-dim); font-family: 'DM Sans', sans-serif; }
     .install-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ─── JOURNAL ─── */
+    .journal-day-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      background: transparent;
+      color: var(--text-dim);
+      transition: all 0.15s ease;
+      min-width: 52px;
+    }
+    .journal-day-tab:hover { background: var(--hover); color: var(--text); }
+    .journal-day-tab.active { background: var(--accent-soft); border-color: var(--accent-mid); color: var(--text); }
+    .journal-day-tab.has-entry .journal-dot { background: var(--accent); }
+    .journal-dot { width: 5px; height: 5px; border-radius: 99px; background: var(--border-strong); transition: background 0.2s; }
+    .journal-day-num { font-size: 18px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .journal-day-name { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .journal-textarea {
+      width: 100%;
+      min-height: 260px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+      resize: vertical;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .journal-textarea::placeholder { color: var(--text-dim); }
+    .journal-textarea:focus { border-color: var(--accent-mid); box-shadow: var(--ring); }
+    .journal-mood-btn {
+      font-size: 22px;
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--bg2);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .journal-mood-btn:hover { transform: scale(1.1); border-color: var(--border-strong); }
+    .journal-mood-btn.active { border-color: var(--accent-mid); background: var(--accent-soft); transform: scale(1.1); }
+    .journal-word-count { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .journal-entry-preview {
+      padding: 14px 16px;
+      background: var(--bg2);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .journal-entry-preview:hover { border-color: var(--border-strong); background: var(--bg3); }
 
     /* ─── PAGE HEADER ─── */
     .page-header {
@@ -957,6 +1023,7 @@
       { label: 'Command', ids: ['dashboard', 'deploy'] },
       { label: 'Study', ids: ['syllabus', 'focus', 'planner'] },
       { label: 'Insights', ids: ['analytics', 'tests', 'rewards'] },
+      { label: 'Personal', ids: ['journal'] },
       { label: 'System', ids: ['settings'] },
     ];
     const MOBILE_PRIMARY_TAB_IDS = ['dashboard', 'deploy', 'syllabus', 'focus'];
@@ -969,7 +1036,7 @@
     const DEFAULT_DAILY_GOAL = 8;
     const COUNTER_OFFENSIVE_GOAL = 10;
     const RETREAT_WINDOW_HOURS = 48;
-    const TAB_IDS = ["dashboard", "deploy", "syllabus", "focus", "planner", "rewards", "analytics", "tests", "settings"];
+    const TAB_IDS = ["dashboard", "deploy", "syllabus", "focus", "planner", "rewards", "analytics", "tests", "journal", "settings"];
     
     const DEFAULT_SYLLABUS = [
       {
@@ -1039,8 +1106,10 @@
       }
     ];
 
-    const createDefaultState = () => ({
-        targetDate: "2026-05-24T00:00:00",
+    const createDefaultState = () => {
+      const nextYear = new Date().getFullYear() + 1;
+      return {
+        targetDate: `${nextYear}-05-25T00:00:00`,
         sessions: [],
         tests: [],
         streak: 0,
@@ -1056,7 +1125,9 @@
         syllabusProgress: {}, 
         syllabus: DEFAULT_SYLLABUS,
         dailyGoalHours: DEFAULT_DAILY_GOAL,
-      });
+        journal: {},
+      };
+    };
 
     const getDailyGoal = (state) => {
       const g = Number(state?.dailyGoalHours);
@@ -1065,12 +1136,17 @@
     };
 
     const getInitialState = () => {
-      const saved = localStorage.getItem("grand_strategy_v2");
-      const parsed = saved ? JSON.parse(saved) : {};
-      return {
-        ...createDefaultState(),
-        ...parsed
-      };
+      try {
+        const saved = localStorage.getItem("grand_strategy_v2");
+        const parsed = saved ? JSON.parse(saved) : {};
+        return {
+          ...createDefaultState(),
+          ...parsed
+        };
+      } catch (e) {
+        console.warn("[GS] localStorage corrupted, resetting to defaults.", e);
+        return createDefaultState();
+      }
     };
 
     const getTabFromUrl = () => {
@@ -1140,15 +1216,18 @@
     function App() {
       const [state, setState] = useState(getInitialState);
       const [tab, setTab] = useState(getTabFromUrl);
-      const [now, setNow] = useState(Date.now());
 
-      useEffect(() => {
-        const id = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(id);
-      }, []);
+      // ── Isolated clock component so only it re-renders every second ──
 
+      const saveTimerRef = React.useRef(null);
       useEffect(() => {
-        localStorage.setItem("grand_strategy_v2", JSON.stringify(state));
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+          try {
+            localStorage.setItem("grand_strategy_v2", JSON.stringify(state));
+          } catch(e) { console.warn("[GS] Save failed:", e); }
+        }, 400);
+        return () => clearTimeout(saveTimerRef.current);
       }, [state]);
 
       useEffect(() => {
@@ -1222,9 +1301,8 @@
       };
 
       const resetAllData = () => {
-        if (!confirm("Reset all app data? This cannot be undone.")) return;
         haptic('error');
-        setState(createDefaultState());
+        setState(s => ({ ...s, _confirmReset: true }));
       };
 
       const TABS = [
@@ -1236,6 +1314,7 @@
         { id: "rewards", icon: "🏆", label: "Rewards" },
         { id: "analytics", icon: "📊", label: "Analytics" },
         { id: "tests", icon: "🎯", label: "Tests" },
+        { id: "journal", icon: "📓", label: "Journal" },
         { id: "settings", icon: "⚙️", label: "Settings" },
       ];
       const tabById = Object.fromEntries(TABS.map(t => [t.id, t]));
@@ -1278,9 +1357,7 @@
               ))}
             </div>
 
-            <div className="sidebar-footer">
-              <ThemeToggle />
-            </div>
+
           </aside>
 
           {/* Main Content Area */}
@@ -1293,10 +1370,9 @@
                   <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{tabById[tab]?.label || 'Overview'}</div>
                 </div>
               </div>
-              <ThemeToggle compact />
             </header>
             <div key={tab} className="page-enter">
-              {tab === "dashboard" && <DashboardView state={state} now={now} updateTimeline={updateTimeline} setState={setState} />}
+              {tab === "dashboard" && <DashboardView state={state} updateTimeline={updateTimeline} setState={setState} />}
               {tab === "deploy" && <DeployView sessions={state.sessions} logSession={logSession} deleteSession={deleteSession} dailyGoal={getDailyGoal(state)} />}
               {tab === "syllabus" && <SyllabusView state={state} setState={setState} />}
               {tab === "focus" && <FocusView state={state} setState={setState} />}
@@ -1304,6 +1380,7 @@
               {tab === "rewards" && <RewardsView state={state} setState={setState} />}
               {tab === "analytics" && <AnalyticsView sessions={state.sessions} dailyGoal={getDailyGoal(state)} />}
               {tab === "tests" && <TestsView tests={state.tests} logTest={logTest} deleteTest={deleteTest} />}
+              {tab === "journal" && <JournalView state={state} setState={setState} />}
               {tab === "settings" && <SettingsView state={state} setState={setState} importData={importData} resetAllData={resetAllData} />}
             </div>
           </main>
@@ -1445,7 +1522,13 @@
       );
     }
 
-    function DashboardView({ state, now, updateTimeline, setState }) {
+    function DashboardView({ state, updateTimeline, setState }) {
+      const [now, setNow] = useState(Date.now());
+      useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(id);
+      }, []);
+
       const [isEditingDate, setIsEditingDate] = useState(false);
       const [tempTarget, setTempTarget] = useState(state.targetDate.split('T')[0]);
       const dailyGoal = getDailyGoal(state);
@@ -1894,88 +1977,103 @@
     function SyllabusView({ state, setState }) {
       const safeSyllabus = state.syllabus || [];
       const [activePaper, setActivePaper] = useState(safeSyllabus.length > 0 ? safeSyllabus[0].id : null);
-      
+
+      // Topic editing
       const [editingTopic, setEditingTopic] = useState(null);
       const [editValue, setEditValue] = useState("");
       const [newTopic, setNewTopic] = useState("");
+      const [deletingTopic, setDeletingTopic] = useState(null);
+
+      // Paper editing / creation
+      const [editingPaper, setEditingPaper] = useState(false);   // editing name of active paper
+      const [paperNameEdit, setPaperNameEdit] = useState("");
+      const [showNewPaper, setShowNewPaper] = useState(false);
+      const [newPaperName, setNewPaperName] = useState("");
+      const [deletingPaper, setDeletingPaper] = useState(false);
 
       const currentPaperData = safeSyllabus.find(p => p.id === activePaper);
       const progressMap = state.syllabusProgress || {};
 
       const updateProgress = (topicName, level) => {
         haptic('light');
-        setState(s => ({
-          ...s,
-          syllabusProgress: {
-            ...(s.syllabusProgress || {}),
-            [topicName]: level
-          }
-        }));
+        setState(s => ({ ...s, syllabusProgress: { ...(s.syllabusProgress || {}), [topicName]: level } }));
       };
 
+      // ── Topic actions ──
       const handleAddTopic = () => {
         if (!newTopic.trim()) { haptic('error'); return; }
         haptic('medium');
-        setState(s => {
-          const updatedSyllabus = s.syllabus.map(p => {
-            if (p.id === activePaper) return { ...p, topics: [...p.topics, newTopic] };
-            return p;
-          });
-          return { ...s, syllabus: updatedSyllabus };
-        });
+        setState(s => ({ ...s, syllabus: s.syllabus.map(p => p.id === activePaper ? { ...p, topics: [...p.topics, newTopic.trim()] } : p) }));
         setNewTopic("");
       };
 
-      const startEdit = (topic) => {
-        haptic('light');
-        setEditingTopic(topic);
-        setEditValue(topic);
-      };
+      const startEditTopic = (topic) => { haptic('light'); setEditingTopic(topic); setEditValue(topic); };
 
-      const handleSaveEdit = (oldTopicName) => {
-        if (!editValue.trim() || editValue === oldTopicName) {
-          setEditingTopic(null);
-          return;
-        }
+      const handleSaveTopicEdit = (old) => {
+        if (!editValue.trim() || editValue === old) { setEditingTopic(null); return; }
         haptic('success');
         setState(s => {
-          const updatedSyllabus = s.syllabus.map(p => {
-            if (p.id === activePaper) {
-               return { ...p, topics: p.topics.map(t => t === oldTopicName ? editValue : t) };
-            }
-            return p;
-          });
-          
-          const newProgress = { ...s.syllabusProgress };
-          if (newProgress[oldTopicName] !== undefined) {
-             newProgress[editValue] = newProgress[oldTopicName];
-             delete newProgress[oldTopicName];
-          }
-
-          return { ...s, syllabus: updatedSyllabus, syllabusProgress: newProgress };
+          const syllabus = s.syllabus.map(p => p.id === activePaper ? { ...p, topics: p.topics.map(t => t === old ? editValue.trim() : t) } : p);
+          const prog = { ...s.syllabusProgress };
+          if (prog[old] !== undefined) { prog[editValue.trim()] = prog[old]; delete prog[old]; }
+          return { ...s, syllabus, syllabusProgress: prog };
         });
         setEditingTopic(null);
       };
 
       const handleDeleteTopic = (topicName) => {
-        haptic('medium');
-        if(!confirm("Are you sure you want to delete this topic?")) return;
         haptic('heavy');
-        setState(s => {
-          const updatedSyllabus = s.syllabus.map(p => {
-             if (p.id === activePaper) return { ...p, topics: p.topics.filter(t => t !== topicName) };
-             return p;
-          });
-          return { ...s, syllabus: updatedSyllabus };
-        });
+        setState(s => ({ ...s, syllabus: s.syllabus.map(p => p.id === activePaper ? { ...p, topics: p.topics.filter(t => t !== topicName) } : p) }));
+        setDeletingTopic(null);
       };
 
-      if (!currentPaperData) return null;
+      // ── Paper actions ──
+      const handleSavePaperName = () => {
+        if (!paperNameEdit.trim()) { setEditingPaper(false); return; }
+        haptic('success');
+        setState(s => ({ ...s, syllabus: s.syllabus.map(p => p.id === activePaper ? { ...p, name: paperNameEdit.trim() } : p) }));
+        setEditingPaper(false);
+        showToast("Paper renamed.", "success");
+      };
 
-      const totalTopics = currentPaperData.topics.length;
-      const scores = currentPaperData.topics.map(t => progressMap[t] || 0);
+      const handleCreatePaper = () => {
+        if (!newPaperName.trim()) { haptic('error'); return; }
+        haptic('success');
+        const newId = "custom_" + Date.now();
+        setState(s => ({ ...s, syllabus: [...s.syllabus, { id: newId, name: newPaperName.trim(), topics: [] }] }));
+        setActivePaper(newId);
+        setNewPaperName("");
+        setShowNewPaper(false);
+        showToast("New paper section created.", "success");
+      };
+
+      const handleDeletePaper = () => {
+        haptic('heavy');
+        const remaining = safeSyllabus.filter(p => p.id !== activePaper);
+        setState(s => ({ ...s, syllabus: remaining }));
+        setActivePaper(remaining.length > 0 ? remaining[0].id : null);
+        setDeletingPaper(false);
+        showToast("Paper section deleted.", "info");
+      };
+
+      if (!currentPaperData && safeSyllabus.length === 0) return (
+        <div className="animate-in">
+          <PageHeader eyebrow="Intelligence map" title="Syllabus Matrix" description="Create your first paper section to begin tracking." />
+          <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 20 }}>No paper sections yet</div>
+            <div style={{ display: "flex", gap: 12, maxWidth: 360, margin: "0 auto" }}>
+              <input className="input-base" placeholder="New paper name..." value={newPaperName} onChange={e => setNewPaperName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreatePaper()} />
+              <button className="btn primary" style={{ width: "auto", padding: "12px 20px" }} onClick={handleCreatePaper}>Create</button>
+            </div>
+          </div>
+        </div>
+      );
+
+      const totalTopics = currentPaperData?.topics.length || 0;
+      const scores = (currentPaperData?.topics || []).map(t => progressMap[t] || 0);
       const maxScore = totalTopics * 3;
-      const currentScore = scores.reduce((a,b)=>a+b, 0);
+      const currentScore = scores.reduce((a, b) => a + b, 0);
       const paperPercent = maxScore > 0 ? ((currentScore / maxScore) * 100).toFixed(0) : 0;
 
       return (
@@ -1983,54 +2081,105 @@
           <PageHeader
             eyebrow="Intelligence map"
             title="Syllabus Matrix"
-            description="Track readiness by paper and topic — edit scores as you revise."
+            description="Track readiness by paper and topic. Create, rename, or delete paper sections."
           />
 
-          <div className="paper-tabs">
-            {safeSyllabus.map(p => (
-              <button key={p.id} className={`paper-tab ${activePaper === p.id ? 'active' : ''}`} onClick={() => { setActivePaper(p.id); setEditingTopic(null); haptic('light'); }}>
-                {p.name}
-              </button>
-            ))}
+          {/* Paper tabs + controls */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+            <div className="paper-tabs" style={{ flex: 1, marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
+              {safeSyllabus.map(p => (
+                <button key={p.id} className={`paper-tab ${activePaper === p.id ? 'active' : ''}`}
+                  onClick={() => { setActivePaper(p.id); setEditingTopic(null); setEditingPaper(false); setDeletingPaper(false); haptic('light'); }}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+            <button className="btn" style={{ width: "auto", padding: "7px 14px", fontSize: 12, flexShrink: 0, marginTop: 2 }}
+              onClick={() => { setShowNewPaper(v => !v); setEditingPaper(false); haptic('light'); }}>
+              + New Section
+            </button>
           </div>
 
-          <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px" }}>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>{currentPaperData.name} Preparedness</div>
-              <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4 }}>Track tactical readiness level across all topics. Edit, delete, or add custom topics below.</div>
+          {/* New paper form */}
+          {showNewPaper && (
+            <div className="card" style={{ padding: "16px 20px", marginBottom: 16, borderColor: "var(--accent-mid)", background: "var(--accent-soft)" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>New Paper Section</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input className="input-base" placeholder="e.g. Essay Paper, CSAT, Geography Optional..." value={newPaperName}
+                  onChange={e => setNewPaperName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreatePaper()} autoFocus />
+                <button className="btn primary" style={{ width: "auto", padding: "10px 20px" }} onClick={handleCreatePaper}>Create</button>
+                <button className="btn" style={{ width: "auto", padding: "10px 16px" }} onClick={() => { setShowNewPaper(false); setNewPaperName(""); }}>Cancel</button>
+              </div>
             </div>
-            <div style={{ textAlign: "right" }}>
+          )}
+
+          {/* Paper header card */}
+          <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {editingPaper ? (
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input className="input-base" value={paperNameEdit} onChange={e => setPaperNameEdit(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSavePaperName(); if (e.key === 'Escape') setEditingPaper(false); }}
+                    autoFocus style={{ maxWidth: 280 }} />
+                  <button className="btn primary" style={{ width: "auto", padding: "8px 16px" }} onClick={handleSavePaperName}>Save</button>
+                  <button className="btn" style={{ width: "auto", padding: "8px 14px" }} onClick={() => setEditingPaper(false)}>Cancel</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ fontSize: 17, fontWeight: 700 }}>{currentPaperData?.name}</div>
+                  <button className="action-btn" title="Rename paper" onClick={() => { setPaperNameEdit(currentPaperData?.name || ""); setEditingPaper(true); setShowNewPaper(false); }} style={{ fontSize: 13 }}>✏️</button>
+                  {deletingPaper ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--danger)", fontWeight: 600 }}>Delete this paper?</span>
+                      <button className="btn" style={{ width: "auto", padding: "5px 12px", fontSize: 12, color: "var(--danger)", borderColor: "rgba(192,57,43,0.35)" }} onClick={handleDeletePaper}>Yes</button>
+                      <button className="btn primary" style={{ width: "auto", padding: "5px 12px", fontSize: 12 }} onClick={() => setDeletingPaper(false)}>No</button>
+                    </div>
+                  ) : (
+                    <button className="action-btn delete" title="Delete paper" onClick={() => setDeletingPaper(true)} style={{ fontSize: 13 }}>🗑️</button>
+                  )}
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4 }}>{totalTopics} topics · hover a row to edit or delete</div>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div className="font-mono" style={{ fontSize: 24, fontWeight: 700, color: "var(--accent)" }}>{paperPercent}%</div>
               <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", fontWeight: 700 }}>Completion</div>
             </div>
           </div>
 
+          {/* Topics list */}
           <div className="card" style={{ padding: "16px 24px" }}>
-            {currentPaperData.topics.map((topic, i) => {
+            {(currentPaperData?.topics || []).map((topic, i) => {
               const lvl = progressMap[topic] || 0;
               const isEditing = editingTopic === topic;
+              const isDeleting = deletingTopic === topic;
 
               return (
-                <div key={`${i}-${topic}`} className="topic-row stagger-item" style={{ animationDelay: `${Math.min(i, 20) * 0.03}s`, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
-                  
+                <div key={`${i}-${topic}`} className="topic-row stagger-item" style={{ animationDelay: `${Math.min(i, 20) * 0.03}s`, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
                   {isEditing ? (
-                    <div style={{ flex: 1, display: "flex", gap: 12, paddingRight: 20 }}>
-                      <input className="input-base" style={{ padding: "8px 12px", margin: 0 }} value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(topic)} autoFocus />
-                      <button className="btn primary" style={{ width: "auto", padding: "8px 16px" }} onClick={() => handleSaveEdit(topic)}>Save</button>
-                      <button className="btn" style={{ width: "auto", padding: "8px 16px" }} onClick={() => setEditingTopic(null)}>Cancel</button>
+                    <div style={{ flex: 1, display: "flex", gap: 10, paddingRight: 16 }}>
+                      <input className="input-base" style={{ padding: "8px 12px", margin: 0 }} value={editValue} onChange={e => setEditValue(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveTopicEdit(topic); if (e.key === 'Escape') setEditingTopic(null); }} autoFocus />
+                      <button className="btn primary" style={{ width: "auto", padding: "8px 14px" }} onClick={() => handleSaveTopicEdit(topic)}>Save</button>
+                      <button className="btn" style={{ width: "auto", padding: "8px 14px" }} onClick={() => setEditingTopic(null)}>Cancel</button>
+                    </div>
+                  ) : isDeleting ? (
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 13, color: "var(--danger)", fontWeight: 600 }}>Delete "{topic.length > 40 ? topic.slice(0, 40) + '…' : topic}"?</span>
+                      <button className="btn" style={{ width: "auto", padding: "5px 12px", fontSize: 12, color: "var(--danger)", borderColor: "rgba(192,57,43,0.35)" }} onClick={() => handleDeleteTopic(topic)}>Delete</button>
+                      <button className="btn primary" style={{ width: "auto", padding: "5px 12px", fontSize: 12 }} onClick={() => setDeletingTopic(null)}>Keep</button>
                     </div>
                   ) : (
-                    <div style={{ flex: 1, paddingRight: 20, fontSize: 14, lineHeight: 1.5, color: lvl > 0 ? "var(--text)" : "var(--text-dim)", display: "flex", alignItems: "center" }}>
+                    <div style={{ flex: 1, paddingRight: 16, fontSize: 14, lineHeight: 1.5, color: lvl > 0 ? "var(--text)" : "var(--text-dim)", display: "flex", alignItems: "center" }}>
                       {topic}
                       <div className="topic-controls">
-                        <button className="action-btn" title="Edit" onClick={() => startEdit(topic)}>✏️</button>
-                        <button className="action-btn delete" title="Delete" onClick={() => handleDeleteTopic(topic)}>🗑️</button>
+                        <button className="action-btn" title="Edit topic" onClick={() => startEditTopic(topic)}>✏️</button>
+                        <button className="action-btn delete" title="Delete topic" onClick={() => setDeletingTopic(topic)}>🗑️</button>
                       </div>
                     </div>
                   )}
-
-                  {!isEditing && (
-                    <div style={{ display: "flex", gap: 6 }}>
+                  {!isEditing && !isDeleting && (
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                       <button className={`prep-btn lvl-0 ${lvl === 0 ? 'active' : ''}`} onClick={() => updateProgress(topic, 0)}>None</button>
                       <button className={`prep-btn lvl-1 ${lvl === 1 ? 'active' : ''}`} onClick={() => updateProgress(topic, 1)}>Low</button>
                       <button className={`prep-btn lvl-2 ${lvl === 2 ? 'active' : ''}`} onClick={() => updateProgress(topic, 2)}>Med</button>
@@ -2040,10 +2189,19 @@
                 </div>
               );
             })}
-            
-            <div style={{ display: "flex", gap: 12, marginTop: 24, paddingTop: 8 }}>
-              <input className="input-base" placeholder="Add custom topic to this paper..." value={newTopic} onChange={e=>{setNewTopic(e.target.value); haptic('tick');}} onKeyDown={e=>e.key==='Enter'&&handleAddTopic()} />
-              <button className="btn" style={{ width: "auto", padding: "12px 24px", background: "var(--hover)" }} onClick={handleAddTopic}>Add Topic</button>
+
+            {totalTopics === 0 && (
+              <div className="empty-state" style={{ padding: "28px 12px" }}>
+                <div className="empty-state-icon">📝</div>
+                <div className="empty-state-title">No topics yet</div>
+                <p className="empty-state-desc">Add topics below to start tracking readiness.</p>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 12, marginTop: 20, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+              <input className="input-base" placeholder="Add topic to this paper..." value={newTopic}
+                onChange={e => { setNewTopic(e.target.value); haptic('tick'); }} onKeyDown={e => e.key === 'Enter' && handleAddTopic()} />
+              <button className="btn" style={{ width: "auto", padding: "12px 24px" }} onClick={handleAddTopic}>Add Topic</button>
             </div>
           </div>
         </div>
@@ -2249,61 +2407,182 @@
     }
 
     // ─── VIEW 5: PLANNER (STANDALONE) ───
+    const HORIZONS = [
+      { id: "short", label: "Short-term", desc: "1–7 days", color: "var(--danger)", soft: "var(--danger-soft)", border: "rgba(192,57,43,0.25)" },
+      { id: "mid",   label: "Mid-term",  desc: "1–4 weeks", color: "var(--warning)", soft: "var(--warning-soft)", border: "rgba(180,83,9,0.25)" },
+      { id: "long",  label: "Long-term", desc: "1+ months", color: "var(--chart-blue)", soft: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.25)" },
+    ];
+
     function PlannerView({ state, setState }) {
       const [newTodo, setNewTodo] = useState("");
+      const [newHorizon, setNewHorizon] = useState("short");
+      const [filterHorizon, setFilterHorizon] = useState("all");
+      const [editingId, setEditingId] = useState(null);
+      const [editValue, setEditValue] = useState("");
+      const [editHorizon, setEditHorizon] = useState("short");
+
+      const todos = state.todos || [];
 
       const handleAddTodo = () => {
-        if (!newTodo) { haptic('error'); return; }
+        if (!newTodo.trim()) { haptic('error'); return; }
         haptic('light');
-        setState(s => ({ ...s, todos: [...(s.todos || []), { id: Date.now(), text: newTodo, done: false }] }));
+        setState(s => ({ ...s, todos: [...(s.todos || []), { id: Date.now(), text: newTodo.trim(), done: false, horizon: newHorizon }] }));
         setNewTodo("");
       };
 
       const toggleTodo = (id) => {
         setState(s => {
-          const targetTodo = s.todos.find(t => t.id === id);
-          if (targetTodo && !targetTodo.done) haptic('medium'); 
+          const target = s.todos.find(t => t.id === id);
+          if (target && !target.done) haptic('medium');
           else haptic('light');
-          
           const todos = (s.todos || []).map(t => t.id === id ? { ...t, done: !t.done } : t);
           let points = s.points || 0;
-          if (targetTodo && !targetTodo.done) points += 5; 
-          else if (targetTodo && targetTodo.done) points -= 5; 
-
+          if (target && !target.done) points += 5;
+          else if (target && target.done) points -= 5;
           return { ...s, todos, points };
         });
       };
+
+      const startEditTodo = (t) => { haptic('light'); setEditingId(t.id); setEditValue(t.text); setEditHorizon(t.horizon || 'short'); };
+
+      const saveEditTodo = (id) => {
+        if (!editValue.trim()) return;
+        haptic('success');
+        setState(s => ({ ...s, todos: s.todos.map(t => t.id === id ? { ...t, text: editValue.trim(), horizon: editHorizon } : t) }));
+        setEditingId(null);
+      };
+
+      const deleteTodo = (id) => { haptic('heavy'); setState(s => ({ ...s, todos: s.todos.filter(x => x.id !== id) })); };
+
+      const changeHorizon = (id, horizon) => { haptic('tick'); setState(s => ({ ...s, todos: s.todos.map(t => t.id === id ? { ...t, horizon } : t) })); };
+
+      const filteredTodos = filterHorizon === "all" ? todos : todos.filter(t => (t.horizon || 'short') === filterHorizon);
+      const counts = HORIZONS.reduce((acc, h) => { acc[h.id] = todos.filter(t => (t.horizon || 'short') === h.id && !t.done).length; return acc; }, {});
+      const doneCount = todos.filter(t => t.done).length;
 
       return (
         <div className="animate-in">
           <PageHeader
             eyebrow="Task management"
             title="Operations Planner"
-            description="Break the syllabus into daily objectives and earn points when you complete them."
+            description="Organise objectives by time horizon — short, mid, or long-term. Earn points on completion."
           />
 
-          <div className="card">
-            <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-              <input className="input-base" placeholder="Define new objective..." value={newTodo} onChange={e=>{setNewTodo(e.target.value); haptic('tick');}} onKeyDown={e=>e.key==='Enter'&&handleAddTodo()} />
-              <button className="btn primary" style={{ width: "auto", padding: "12px 32px" }} onClick={handleAddTodo}>Add Objective</button>
-            </div>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {(state.todos || []).map((t, i) => (
-                <div key={t.id} className="stagger-item" style={{ animationDelay: `${i * 0.05}s`, display: "flex", alignItems: "center", gap: 16, background: "var(--bg2)", padding: "16px 20px", borderRadius: 8, opacity: t.done ? 0.5 : 1, transition: "all 0.3s ease" }}>
-                  <input type="checkbox" checked={t.done} onChange={() => toggleTodo(t.id)} style={{ width: 20, height: 20, accentColor: "var(--accent)", cursor: "pointer", transform: t.done ? "scale(1.1)" : "scale(1)", transition: "transform 0.2s" }} />
-                  <span style={{ textDecoration: t.done ? "line-through" : "none", flex: 1, fontSize: 15 }}>{t.text}</span>
-                  <button onClick={()=>{ haptic('heavy'); setState(s=>({...s, todos: s.todos.filter(x=>x.id!==t.id)}))}} className="action-btn delete" style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 16 }}>✕</button>
-                </div>
+          {/* Horizon summary */}
+          <div className="grid-3" style={{ marginBottom: 20 }}>
+            {HORIZONS.map(h => (
+              <div key={h.id} className="card static" style={{ padding: "14px 18px", marginBottom: 0, borderLeft: `3px solid ${h.color}`, cursor: "pointer", background: filterHorizon === h.id ? h.soft : "var(--bg)" }}
+                onClick={() => { haptic('light'); setFilterHorizon(filterHorizon === h.id ? "all" : h.id); }}>
+                <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>{h.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: h.color, letterSpacing: "-0.02em", lineHeight: 1.2, marginTop: 4 }}>{counts[h.id]}</div>
+                <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>{h.desc} · pending</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add new */}
+          <div className="card" style={{ marginBottom: 20 }}>
+            <span className="subtitle">New Objective</span>
+            <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+              {HORIZONS.map(h => (
+                <button key={h.id} type="button"
+                  style={{ padding: "7px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    background: newHorizon === h.id ? h.soft : "var(--bg2)",
+                    border: `1.5px solid ${newHorizon === h.id ? h.border : "var(--border)"}`,
+                    color: newHorizon === h.id ? h.color : "var(--text-muted)",
+                    transition: "all 0.15s" }}
+                  onClick={() => { setNewHorizon(h.id); haptic('tick'); }}>
+                  {h.label} <span style={{ opacity: 0.65, fontWeight: 400 }}>· {h.desc}</span>
+                </button>
               ))}
-              {(!state.todos || state.todos.length === 0) && (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📝</div>
-                  <div className="empty-state-title">No objectives yet</div>
-                  <p className="empty-state-desc">Add a task above to plan your next study moves.</p>
-                </div>
-              )}
             </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <input className="input-base" placeholder="Define new objective..." value={newTodo}
+                onChange={e => { setNewTodo(e.target.value); haptic('tick'); }} onKeyDown={e => e.key === 'Enter' && handleAddTodo()} />
+              <button className="btn primary" style={{ width: "auto", padding: "12px 28px" }} onClick={handleAddTodo}>Add</button>
+            </div>
+          </div>
+
+          {/* Filter bar */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginRight: 4 }}>Show:</span>
+            {[{ id: "all", label: `All (${todos.length})` }, ...HORIZONS.map(h => ({ id: h.id, label: `${h.label} (${todos.filter(t=>(t.horizon||'short')===h.id).length})` }))].map(f => (
+              <button key={f.id} type="button"
+                style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: filterHorizon === f.id ? 600 : 400,
+                  background: filterHorizon === f.id ? "var(--accent-soft)" : "var(--bg2)",
+                  border: `1px solid ${filterHorizon === f.id ? "var(--accent-mid)" : "var(--border)"}`,
+                  color: filterHorizon === f.id ? "var(--text)" : "var(--text-muted)", transition: "all 0.15s" }}
+                onClick={() => { setFilterHorizon(f.id); haptic('light'); }}>
+                {f.label}
+              </button>
+            ))}
+            {doneCount > 0 && (
+              <button type="button"
+                style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginLeft: "auto",
+                  background: "var(--bg2)", border: "1px solid var(--border)", color: "var(--text-dim)", transition: "all 0.15s" }}
+                onClick={() => { haptic('heavy'); setState(s => ({ ...s, todos: s.todos.filter(t => !t.done) })); }}>
+                Clear {doneCount} done
+              </button>
+            )}
+          </div>
+
+          {/* Todo list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {filteredTodos.map((t, i) => {
+              const h = HORIZONS.find(h => h.id === (t.horizon || 'short')) || HORIZONS[0];
+              const isEditing = editingId === t.id;
+              return (
+                <div key={t.id} className="stagger-item" style={{ animationDelay: `${i * 0.04}s`, background: "var(--bg2)", borderRadius: 10, border: `1px solid var(--border)`, borderLeft: `3px solid ${t.done ? "var(--border)" : h.color}`, padding: "14px 16px", opacity: t.done ? 0.5 : 1, transition: "all 0.25s ease" }}>
+                  {isEditing ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <input className="input-base" value={editValue} onChange={e => setEditValue(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveEditTodo(t.id); if (e.key === 'Escape') setEditingId(null); }} autoFocus />
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                        {HORIZONS.map(hh => (
+                          <button key={hh.id} type="button"
+                            style={{ padding: "5px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                              background: editHorizon === hh.id ? hh.soft : "var(--bg)",
+                              border: `1.5px solid ${editHorizon === hh.id ? hh.border : "var(--border)"}`,
+                              color: editHorizon === hh.id ? hh.color : "var(--text-muted)" }}
+                            onClick={() => setEditHorizon(hh.id)}>{hh.label}</button>
+                        ))}
+                        <button className="btn primary" style={{ width: "auto", padding: "6px 16px", marginLeft: "auto" }} onClick={() => saveEditTodo(t.id)}>Save</button>
+                        <button className="btn" style={{ width: "auto", padding: "6px 14px" }} onClick={() => setEditingId(null)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <input type="checkbox" checked={t.done} onChange={() => toggleTodo(t.id)}
+                        style={{ width: 18, height: 18, accentColor: h.color, cursor: "pointer", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, textDecoration: t.done ? "line-through" : "none", color: "var(--text)", lineHeight: 1.4 }}>{t.text}</div>
+                        <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                          {HORIZONS.map(hh => (
+                            <button key={hh.id} type="button"
+                              style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                                background: (t.horizon || 'short') === hh.id ? hh.soft : "transparent",
+                                border: `1px solid ${(t.horizon || 'short') === hh.id ? hh.border : "var(--border)"}`,
+                                color: (t.horizon || 'short') === hh.id ? hh.color : "var(--text-dim)", transition: "all 0.12s" }}
+                              onClick={() => changeHorizon(t.id, hh.id)}>{hh.label}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        <button className="action-btn" title="Edit" onClick={() => startEditTodo(t)} style={{ fontSize: 13 }}>✏️</button>
+                        <button className="action-btn delete" title="Delete" onClick={() => deleteTodo(t.id)} style={{ fontSize: 13 }}>✕</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filteredTodos.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-state-icon">📝</div>
+                <div className="empty-state-title">{filterHorizon === "all" ? "No objectives yet" : `No ${HORIZONS.find(h=>h.id===filterHorizon)?.label} objectives`}</div>
+                <p className="empty-state-desc">{filterHorizon === "all" ? "Add an objective above to plan your next study moves." : "Add one above or switch the filter to see others."}</p>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -2800,6 +3079,248 @@
       );
     }
 
+    // ─── VIEW: JOURNAL ───
+    const JOURNAL_MOODS = [
+      { emoji: "😤", label: "Frustrated" },
+      { emoji: "😴", label: "Tired" },
+      { emoji: "😐", label: "Neutral" },
+      { emoji: "🙂", label: "Good" },
+      { emoji: "🔥", label: "Fired up" },
+    ];
+
+    const JOURNAL_PROMPTS = [
+      "What did I actually study today, and was it enough?",
+      "What concept clicked today that was fuzzy before?",
+      "What am I avoiding, and why?",
+      "If I could redo today's study session, what would I change?",
+      "What's one thing I'm genuinely worried about in the syllabus?",
+      "How is my energy and focus compared to last week?",
+      "What small win today deserves recognition?",
+      "Which subject needs emergency attention this week?",
+    ];
+
+    function JournalView({ state, setState }) {
+      const last7 = useMemo(() => Array.from({ length: 7 }, (_, i) => getPastDateStr(i)), []);
+      const [activeDate, setActiveDate] = useState(last7[0]);
+      const [draftText, setDraftText] = useState("");
+      const [draftMood, setDraftMood] = useState(null);
+      const [saved, setSaved] = useState(false);
+      const [prompt, setPrompt] = useState(() => JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)]);
+
+      const journal = state.journal || {};
+
+      // Load entry when active date changes
+      useEffect(() => {
+        const entry = journal[activeDate];
+        setDraftText(entry?.text || "");
+        setDraftMood(entry?.mood || null);
+        setSaved(false);
+      }, [activeDate]);
+
+      const saveEntry = useCallback(() => {
+        if (!draftText.trim() && draftMood === null) return;
+        haptic('success');
+        setState(s => {
+          const newJournal = { ...(s.journal || {}) };
+          // Keep only last 7 days — prune older entries
+          const cutoff = getPastDateStr(6);
+          Object.keys(newJournal).forEach(d => { if (d < cutoff) delete newJournal[d]; });
+          newJournal[activeDate] = {
+            text: draftText,
+            mood: draftMood,
+            updatedAt: new Date().toISOString(),
+          };
+          return { ...s, journal: newJournal };
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+        showToast("Journal entry saved.", "success");
+      }, [draftText, draftMood, activeDate, setState]);
+
+      const deleteEntry = useCallback(() => {
+        haptic('heavy');
+        setState(s => {
+          const newJournal = { ...(s.journal || {}) };
+          delete newJournal[activeDate];
+          return { ...s, journal: newJournal };
+        });
+        setDraftText("");
+        setDraftMood(null);
+        showToast("Entry deleted.", "info");
+      }, [activeDate, setState]);
+
+      const wordCount = draftText.trim() ? draftText.trim().split(/\s+/).length : 0;
+      const currentEntry = journal[activeDate];
+      const totalEntries = Object.keys(journal).length;
+      const totalWords = Object.values(journal).reduce((a, e) => a + (e.text ? e.text.trim().split(/\s+/).length : 0), 0);
+
+      const formatDateLabel = (dateStr) => {
+        const d = new Date(dateStr + 'T12:00:00');
+        const today = last7[0];
+        const yesterday = last7[1];
+        if (dateStr === today) return "Today";
+        if (dateStr === yesterday) return "Yesterday";
+        return d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+      };
+
+      return (
+        <div className="animate-in">
+          <PageHeader
+            eyebrow="Daily reflection"
+            title="Field Journal"
+            description="Private notes on your mindset, progress, and strategy. Last 7 days retained."
+          />
+
+          {/* Stats row */}
+          <div className="grid-3" style={{ marginBottom: 24 }}>
+            <div className="card static" style={{ padding: "14px 20px", marginBottom: 0 }}>
+              <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Entries</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--accent)", letterSpacing: "-0.02em" }}>{totalEntries}</div>
+              <div style={{ fontSize: 11, color: "var(--text-dim)" }}>of 7 days</div>
+            </div>
+            <div className="card static" style={{ padding: "14px 20px", marginBottom: 0 }}>
+              <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Words Written</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}>{totalWords}</div>
+              <div style={{ fontSize: 11, color: "var(--text-dim)" }}>this week</div>
+            </div>
+            <div className="card static" style={{ padding: "14px 20px", marginBottom: 0 }}>
+              <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Today's Mood</div>
+              <div style={{ fontSize: 28 }}>{journal[last7[0]]?.mood || "—"}</div>
+              <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{journal[last7[0]] ? JOURNAL_MOODS.find(m => m.emoji === journal[last7[0]].mood)?.label || "logged" : "not set"}</div>
+            </div>
+          </div>
+
+          {/* Day picker */}
+          <div className="card" style={{ padding: "16px 20px", marginBottom: 20 }}>
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+              {last7.map((d) => {
+                const hasEntry = !!journal[d];
+                const dayDate = new Date(d + 'T12:00:00');
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`journal-day-tab ${activeDate === d ? "active" : ""} ${hasEntry ? "has-entry" : ""}`}
+                    onClick={() => { haptic('light'); setActiveDate(d); setPrompt(JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)]); }}
+                  >
+                    <span className="journal-day-name">{dayDate.toLocaleDateString('en', { weekday: 'short' })}</span>
+                    <span className="journal-day-num">{dayDate.getDate()}</span>
+                    <span className="journal-dot" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid-2" style={{ alignItems: "flex-start" }}>
+            {/* Editor */}
+            <div>
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{formatDateLabel(activeDate)}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
+                      {new Date(activeDate + 'T12:00:00').toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </div>
+                  </div>
+                  {currentEntry && (
+                    <button type="button" className="action-btn delete" onClick={deleteEntry} title="Delete entry" style={{ fontSize: 14, padding: "6px 8px" }}>✕</button>
+                  )}
+                </div>
+
+                {/* Mood picker */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>How are you feeling?</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {JOURNAL_MOODS.map(m => (
+                      <button
+                        key={m.emoji}
+                        type="button"
+                        className={`journal-mood-btn ${draftMood === m.emoji ? "active" : ""}`}
+                        title={m.label}
+                        onClick={() => { haptic('tick'); setDraftMood(prev => prev === m.emoji ? null : m.emoji); setSaved(false); }}
+                      >
+                        {m.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Prompt */}
+                <div style={{ marginBottom: 12, padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 8, border: "1px solid var(--accent-mid)" }}>
+                  <div style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Prompt</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>"{prompt}"</div>
+                </div>
+
+                <textarea
+                  className="journal-textarea"
+                  placeholder="Write freely — what's on your mind today? This is private, honest space."
+                  value={draftText}
+                  onChange={e => { setDraftText(e.target.value); setSaved(false); }}
+                  onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveEntry(); } }}
+                />
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                  <span className="journal-word-count">{wordCount} {wordCount === 1 ? "word" : "words"} · Ctrl+S to save</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {saved && <span style={{ fontSize: 12, color: "var(--success)", fontWeight: 600 }}>✓ Saved</span>}
+                    <button
+                      type="button"
+                      className="btn primary"
+                      style={{ width: "auto", padding: "9px 22px" }}
+                      onClick={saveEntry}
+                      disabled={!draftText.trim() && draftMood === null}
+                    >
+                      Save Entry
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Past entries sidebar */}
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Past 7 Days</div>
+              {last7.map(d => {
+                const entry = journal[d];
+                if (!entry || !entry.text) return (
+                  <div key={d} style={{ padding: "12px 14px", background: "var(--bg2)", borderRadius: 8, border: "1px solid var(--border)", marginBottom: 8, opacity: 0.45 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-dim)" }}>{formatDateLabel(d)} — no entry</div>
+                  </div>
+                );
+                const wc = entry.text.trim().split(/\s+/).length;
+                const preview = entry.text.length > 100 ? entry.text.slice(0, 100) + "…" : entry.text;
+                return (
+                  <div
+                    key={d}
+                    className="journal-entry-preview"
+                    onClick={() => { haptic('light'); setActiveDate(d); }}
+                    style={{ borderColor: activeDate === d ? "var(--accent-mid)" : "var(--border)", background: activeDate === d ? "var(--accent-soft)" : "var(--bg2)" }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+                        {entry.mood && <span style={{ marginRight: 6 }}>{entry.mood}</span>}
+                        {formatDateLabel(d)}
+                      </div>
+                      <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{wc}w</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{preview}</div>
+                  </div>
+                );
+              })}
+              {totalEntries === 0 && (
+                <div className="empty-state" style={{ padding: "32px 16px" }}>
+                  <div className="empty-state-icon">📓</div>
+                  <div className="empty-state-title">No entries yet</div>
+                  <p className="empty-state-desc">Write your first entry on the left to start your journal.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function SettingsView({ state, setState, importData, resetAllData }) {
       const [importMsg, setImportMsg] = useState("");
       const [goalInput, setGoalInput] = useState(String(getDailyGoal(state)));
@@ -2951,9 +3472,19 @@
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
                 Reset will wipe all sessions, tests, planner tasks, rewards, progress and streaks.
               </p>
-              <button className="btn" style={{ width: "auto", color: "var(--danger)", borderColor: "var(--danger-soft)" }} onClick={resetAllData}>
-                Reset All Data
-              </button>
+              {state._confirmReset ? (
+                <div style={{ padding: "14px 16px", background: "var(--danger-soft)", borderRadius: 8, border: "1px solid rgba(192,57,43,0.25)" }}>
+                  <div style={{ fontSize: 13, color: "var(--danger)", fontWeight: 600, marginBottom: 12 }}>⚠️ This cannot be undone. Are you sure?</div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button className="btn" style={{ width: "auto", padding: "8px 16px", color: "var(--danger)", borderColor: "rgba(192,57,43,0.4)" }} onClick={() => { haptic('error'); setState(createDefaultState()); }}>Yes, reset everything</button>
+                    <button className="btn primary" style={{ width: "auto", padding: "8px 16px" }} onClick={() => { haptic('light'); setState(s => ({ ...s, _confirmReset: false })); }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button className="btn" style={{ width: "auto", color: "var(--danger)", borderColor: "var(--danger-soft)" }} onClick={resetAllData}>
+                  Reset All Data
+                </button>
+              )}
             </div>
           </div>
         </div>
