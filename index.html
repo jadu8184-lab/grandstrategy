@@ -7,7 +7,15 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#f9f9f8">
+  <meta name="theme-color" content="#f9f9f8" id="meta-theme-color">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function () {
+      var k = 'gs_theme', t = localStorage.getItem(k);
+      var dark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Grand Strategy">
@@ -22,17 +30,31 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* ─── CLAUDE-INSPIRED WHITE MINIMALIST THEME ─── */
-    :root {
+    /* ─── THEME TOKENS (light default) ─── */
+    :root,
+    [data-theme="light"] {
       --bg: #ffffff;
       --bg2: #f9f9f8;
       --bg3: #f1f0ee;
       --border: #e5e4e2;
       --border-strong: #d4d3d0;
-      --hover: rgba(0,0,0,0.04);
+      --hover: rgba(0, 0, 0, 0.04);
       --text: #1a1a18;
       --text-muted: #6b6b68;
       --text-dim: #a3a39f;
+      --surface-overlay: rgba(255, 255, 255, 0.92);
+      --primary-hover: #333331;
+      --logo-bg: #1a1a18;
+      --logo-fg: #ffffff;
+      --chart-blue: #3b82f6;
+      --heatmap-1: rgba(218, 119, 86, 0.18);
+      --heatmap-2: rgba(218, 119, 86, 0.42);
+      --heatmap-3: rgba(218, 119, 86, 0.68);
+      --bar-fill: rgba(218, 119, 86, 0.22);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10);
+      --ring: 0 0 0 3px var(--accent-soft);
 
       --accent-r: 218;
       --accent-g: 119;
@@ -53,7 +75,51 @@
       --radius-sm: 7px;
     }
 
+    [data-theme="dark"] {
+      --bg: #141413;
+      --bg2: #1c1c1a;
+      --bg3: #262624;
+      --border: #333330;
+      --border-strong: #454542;
+      --hover: rgba(255, 255, 255, 0.06);
+      --text: #ececea;
+      --text-muted: #a8a8a3;
+      --text-dim: #737370;
+      --surface-overlay: rgba(20, 20, 19, 0.94);
+      --primary-hover: #f0f0ee;
+      --logo-bg: #ececea;
+      --logo-fg: #141413;
+      --chart-blue: #60a5fa;
+      --heatmap-1: rgba(232, 140, 110, 0.22);
+      --heatmap-2: rgba(232, 140, 110, 0.45);
+      --heatmap-3: rgba(232, 140, 110, 0.72);
+      --bar-fill: rgba(232, 140, 110, 0.28);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --ring: 0 0 0 3px var(--accent-soft);
+
+      --accent-r: 232;
+      --accent-g: 140;
+      --accent-b: 110;
+      --accent-soft: rgba(232, 140, 110, 0.12);
+      --accent-mid: rgba(232, 140, 110, 0.22);
+
+      --success: #4ade80;
+      --success-soft: rgba(74, 222, 128, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+      --danger-soft: rgba(248, 113, 113, 0.12);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      color-scheme: light dark;
+    }
+    html[data-theme="light"] { color-scheme: light; }
+    html[data-theme="dark"] { color-scheme: dark; }
 
     body {
       font-family: 'DM Sans', -apple-system, sans-serif;
@@ -64,6 +130,7 @@
       overflow-x: hidden;
       font-size: 15px;
       line-height: 1.5;
+      transition: background-color 0.25s ease, color 0.2s ease;
     }
 
     ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -82,7 +149,7 @@
 
     .sidebar {
       width: var(--sidebar-w);
-      background: var(--bg2);
+      background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
       border-right: 1px solid var(--border);
       padding: 24px 16px;
       display: flex;
@@ -93,6 +160,78 @@
       z-index: 50;
       overflow-y: auto;
     }
+
+    .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: -20px -16px 20px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-overlay);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .mobile-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .app-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--logo-bg);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--logo-fg);
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .app-logo:hover { transform: scale(1.05); box-shadow: var(--shadow-md); }
+
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-toggle:hover { background: var(--bg3); color: var(--text); border-color: var(--border-strong); }
+    .theme-toggle:active { transform: scale(0.98); }
+    .theme-toggle.compact {
+      width: auto;
+      padding: 8px 12px;
+    }
+    .theme-toggle-icon { font-size: 16px; line-height: 1; }
 
     .main-content {
       flex: 1;
@@ -108,19 +247,23 @@
       .app-layout { flex-direction: column; }
       .sidebar { display: none; }
       .main-content { padding: 20px 16px; padding-bottom: 90px; }
+      .mobile-header { display: flex; }
 
       .bottom-nav {
         display: flex;
         position: fixed; bottom: 0; left: 0; right: 0;
-        background: rgba(255,255,255,0.95);
+        background: var(--surface-overlay);
         backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-top: 1px solid var(--border);
         padding: 10px 16px 22px;
         z-index: 100;
         overflow-x: auto;
         gap: 4px;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, background 0.25s ease;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
       }
+      [data-theme="dark"] .bottom-nav { box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35); }
       .bottom-nav::-webkit-scrollbar { display: none; }
     }
 
@@ -153,12 +296,16 @@
       border-radius: var(--radius);
       padding: 20px;
       margin-bottom: 20px;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s ease, background-color 0.25s ease,
+                  box-shadow 0.25s ease, transform 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
     .card:hover {
       border-color: var(--border-strong);
-      
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
     }
+    .card.flush:hover { transform: none; box-shadow: var(--shadow-sm); }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -183,7 +330,7 @@
     }
     .input-base:focus {
       border-color: var(--accent);
-      
+      box-shadow: var(--ring);
     }
     .input-base::placeholder { color: var(--text-dim); }
 
@@ -202,22 +349,24 @@
       letter-spacing: 0.01em;
       transition: all 0.15s ease;
     }
-    .btn:hover { background: var(--bg3); border-color: var(--border-strong); color: var(--text); }
+    .btn:hover { background: var(--bg3); border-color: var(--border-strong); color: var(--text); transform: translateY(-1px); }
     .btn:active { transform: scale(0.98); }
+    .btn:focus-visible { outline: none; box-shadow: var(--ring); }
     .btn.primary {
       background: var(--text);
       color: var(--bg);
       border-color: var(--text);
       font-weight: 500;
     }
-    .btn.primary:hover { background: #333; border-color: #333;  }
+    .btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .btn.primary:active { transform: scale(0.98); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
     /* ─── NAV ITEMS ─── */
     .nav-item {
+      position: relative;
       display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px;
+      padding: 9px 12px 9px 14px;
       border-radius: var(--radius-sm);
       color: var(--text-muted);
       font-weight: 400;
@@ -225,17 +374,29 @@
       cursor: pointer;
       transition: all 0.15s ease;
       margin-bottom: 2px;
+      border: 1px solid transparent;
     }
     .nav-item:hover { background: var(--hover); color: var(--text); }
     .nav-item:active { transform: scale(0.98); }
     .nav-item.active {
-      background: var(--bg3);
+      background: var(--accent-soft);
       color: var(--text);
       font-weight: 500;
+      border-color: var(--accent-mid);
+    }
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: -1px; top: 50%;
+      transform: translateY(-50%);
+      width: 3px; height: 18px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
     }
 
     /* ─── MOBILE TABS ─── */
     .tab-btn {
+      position: relative;
       min-width: 56px;
       display: flex;
       flex-direction: column;
@@ -251,14 +412,23 @@
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      padding: 6px 8px;
+      padding: 6px 8px 10px;
       border-radius: var(--radius-sm);
     }
     .tab-btn:active { transform: scale(0.94); }
     .tab-btn:hover { color: var(--text); background: var(--hover); }
-    .tab-btn.active { color: var(--text); background: var(--bg3); }
+    .tab-btn.active { color: var(--accent); background: var(--accent-soft); }
     .tab-btn span.icon { font-size: 18px; transition: transform 0.2s ease; }
-    .tab-btn.active span.icon { transform: scale(1.1); }
+    .tab-btn.active span.icon { transform: scale(1.12); }
+    .tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: 2px; left: 50%;
+      transform: translateX(-50%);
+      width: 4px; height: 4px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
 
     /* ─── PROGRESS & CHARTS ─── */
     .progress-track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
@@ -288,7 +458,7 @@
     .bar-chart-container { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding-top: 20px; border-bottom: 1px solid var(--border); }
     .bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; transition: transform 0.15s; }
     .bar-wrapper:hover { transform: translateY(-3px); }
-    .bar { width: 100%; background: rgba(218,119,86,0.2); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.7s cubic-bezier(0.16, 1, 0.3, 1); position: relative; border: 1px solid var(--border); border-bottom: none; }
+    .bar { width: 100%; background: var(--bar-fill); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.7s cubic-bezier(0.16, 1, 0.3, 1); position: relative; border: 1px solid var(--border); border-bottom: none; }
     .bar-label { font-size: 9.5px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
     .bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 500; opacity: 0; transition: all 0.15s; color: var(--text-muted); white-space: nowrap; }
     .bar-wrapper:hover .bar-value { opacity: 1; transform: translate(-50%, -3px); }
@@ -322,12 +492,22 @@
     .paper-tab { white-space: nowrap; padding: 7px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 400; color: var(--text-muted); transition: all 0.15s; background: transparent; border: 1px solid transparent; font-family: 'DM Sans', sans-serif; }
     .paper-tab:hover { color: var(--text); background: var(--hover); }
     .paper-tab:active { transform: scale(0.96); }
-    .paper-tab.active { background: var(--bg2); color: var(--text); border-color: var(--border); font-weight: 500; }
+    .paper-tab.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent-mid); font-weight: 500; }
 
     /* ─── ANIMATIONS ─── */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .stagger-item { opacity: 0; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+      .card:hover, .btn:hover, .btn.primary:hover { transform: none !important; }
+    }
 
     @keyframes celebratePop {
       0% { transform: scale(1);  }
@@ -344,6 +524,27 @@
 
     /* ─── DIVIDERS & MISC ─── */
     select.input-base { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a39f' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    [data-theme="dark"] select.input-base { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737370' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); }
+
+    .install-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+    }
+    [data-theme="dark"] .install-banner { box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4); }
+    .install-banner-title { font-size: 14px; font-weight: 500; color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .install-banner-sub { font-size: 12px; color: var(--text-dim); font-family: 'DM Sans', sans-serif; }
+    .install-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -374,9 +575,10 @@
     const EXAM_TYPES = ["Prelims Full Mock", "Mains Full Mock", "Sectional Test", "CSAT Mock"];
     const DEPLOYMENT_TYPES = ["Passive Reading", "Revision", "Answer Writing", "Class/Lecture", "Mock Test Analysis"];
     
-    const DAILY_GOAL = 8;
+    const DEFAULT_DAILY_GOAL = 8;
     const COUNTER_OFFENSIVE_GOAL = 10;
     const RETREAT_WINDOW_HOURS = 48;
+    const TAB_IDS = ["dashboard", "deploy", "syllabus", "focus", "planner", "rewards", "analytics", "tests", "settings"];
     
     const DEFAULT_SYLLABUS = [
       {
@@ -446,11 +648,7 @@
       }
     ];
 
-    const getInitialState = () => {
-      const saved = localStorage.getItem("grand_strategy_v2");
-      const parsed = saved ? JSON.parse(saved) : {};
-      
-      return {
+    const createDefaultState = () => ({
         targetDate: "2026-05-24T00:00:00",
         sessions: [],
         tests: [],
@@ -466,8 +664,38 @@
         pomodoros: [],
         syllabusProgress: {}, 
         syllabus: DEFAULT_SYLLABUS,
+        dailyGoalHours: DEFAULT_DAILY_GOAL,
+      });
+
+    const getDailyGoal = (state) => {
+      const g = Number(state?.dailyGoalHours);
+      if (!Number.isFinite(g)) return DEFAULT_DAILY_GOAL;
+      return Math.min(16, Math.max(1, g));
+    };
+
+    const getInitialState = () => {
+      const saved = localStorage.getItem("grand_strategy_v2");
+      const parsed = saved ? JSON.parse(saved) : {};
+      return {
+        ...createDefaultState(),
         ...parsed
       };
+    };
+
+    const getTabFromUrl = () => {
+      try {
+        const t = new URLSearchParams(window.location.search).get('tab');
+        return TAB_IDS.includes(t) ? t : "dashboard";
+      } catch (_) {
+        return "dashboard";
+      }
+    };
+
+    const setTabInUrl = (tab) => {
+      const url = new URL(window.location.href);
+      if (tab === "dashboard") url.searchParams.delete('tab');
+      else url.searchParams.set('tab', tab);
+      window.history.replaceState({}, "", url.toString());
     };
 
     // Helper: Dates
@@ -486,10 +714,41 @@
       return { d: String(d).padStart(2, "0"), h: String(h).padStart(2, "0"), m: String(m).padStart(2, "0"), s: String(s).padStart(2, "0") };
     };
 
+    const THEME_KEY = 'gs_theme';
+    const getInitialTheme = () => {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved === 'light' || saved === 'dark') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    const applyTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      const meta = document.getElementById('meta-theme-color');
+      if (meta) meta.setAttribute('content', theme === 'dark' ? '#141413' : '#f9f9f8');
+    };
+
+    function ThemeToggle({ compact = false }) {
+      const [theme, setTheme] = useState(getInitialTheme);
+      useEffect(() => {
+        applyTheme(theme);
+        localStorage.setItem(THEME_KEY, theme);
+      }, [theme]);
+      const toggle = () => {
+        haptic('light');
+        setTheme(t => (t === 'dark' ? 'light' : 'dark'));
+      };
+      const isDark = theme === 'dark';
+      return (
+        <button type="button" className={`theme-toggle${compact ? ' compact' : ''}`} onClick={toggle} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} title={isDark ? 'Light mode' : 'Dark mode'}>
+          <span className="theme-toggle-icon" aria-hidden="true">{isDark ? '☀️' : '🌙'}</span>
+          {!compact && <span>{isDark ? 'Light mode' : 'Dark mode'}</span>}
+        </button>
+      );
+    }
+
     // ─── MAIN APP COMPONENT ───
     function App() {
       const [state, setState] = useState(getInitialState);
-      const [tab, setTab] = useState("dashboard");
+      const [tab, setTab] = useState(getTabFromUrl);
       const [now, setNow] = useState(Date.now());
 
       useEffect(() => {
@@ -501,6 +760,16 @@
         localStorage.setItem("grand_strategy_v2", JSON.stringify(state));
       }, [state]);
 
+      useEffect(() => {
+        setTabInUrl(tab);
+      }, [tab]);
+
+      useEffect(() => {
+        const onPop = () => setTab(getTabFromUrl());
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+      }, []);
+
       const logSession = useCallback((subject, type, hours) => {
         setState(s => {
           const newSessions = [...s.sessions, { id: Date.now(), date: todayStr(), subject, type, hours: parseFloat(hours) }];
@@ -508,12 +777,13 @@
           const oldTodayHours = s.sessions.filter(x => x.date === todayStr()).reduce((a, x) => a + x.hours, 0);
           
           let { streak, longestStreak, tacticalRetreat } = s;
+          const dailyGoal = getDailyGoal(s);
 
-          if (newTodayHours >= DAILY_GOAL && oldTodayHours < DAILY_GOAL) {
+          if (newTodayHours >= dailyGoal && oldTodayHours < dailyGoal) {
             haptic('success'); // Goal met trigger
             const yesterday = getPastDateStr(1);
             const yesterdayHours = s.sessions.filter(x => x.date === yesterday).reduce((a, x) => a + x.hours, 0);
-            if (yesterdayHours >= DAILY_GOAL || streak === 0) {
+            if (yesterdayHours >= dailyGoal || streak === 0) {
               streak += 1;
               longestStreak = Math.max(streak, longestStreak);
               tacticalRetreat = null;
@@ -551,6 +821,21 @@
         setTab(tId);
       };
 
+      const importData = (payload) => {
+        const defaults = createDefaultState();
+        const safe = { ...defaults };
+        Object.keys(defaults).forEach((k) => {
+          if (payload && payload[k] !== undefined) safe[k] = payload[k];
+        });
+        setState(safe);
+      };
+
+      const resetAllData = () => {
+        if (!confirm("Reset all app data? This cannot be undone.")) return;
+        haptic('error');
+        setState(createDefaultState());
+      };
+
       const TABS = [
         { id: "dashboard", icon: "⌘", label: "Overview" },
         { id: "deploy", icon: "⚡", label: "Deploy" },
@@ -560,6 +845,7 @@
         { id: "rewards", icon: "🏆", label: "Rewards" },
         { id: "analytics", icon: "📊", label: "Analytics" },
         { id: "tests", icon: "🎯", label: "Testing" },
+        { id: "settings", icon: "⚙️", label: "Settings" },
       ];
 
       return (
@@ -567,29 +853,41 @@
           {/* Desktop Sidebar */}
           <aside className="sidebar">
             <div style={{ marginBottom: 32, display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
-              <div style={{ width: 28, height: 28, background: "var(--text)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--bg)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>G</div>
+              <div className="app-logo">G</div>
               <div className="font-syne" style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.01em", color: "var(--text)" }}>Grand Strategy</div>
             </div>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div className="sidebar-nav">
               {TABS.map(t => (
                 <div key={t.id} className={`nav-item ${tab === t.id ? "active" : ""}`} onClick={() => handleTabSwitch(t.id)}>
                   <span style={{ fontSize: 18 }}>{t.icon}</span> {t.label}
                 </div>
               ))}
             </div>
+
+            <div className="sidebar-footer">
+              <ThemeToggle />
+            </div>
           </aside>
 
           {/* Main Content Area */}
           <main className="main-content">
-            {tab === "dashboard" && <DashboardView state={state} now={now} updateTimeline={updateTimeline} />}
-            {tab === "deploy" && <DeployView sessions={state.sessions} logSession={logSession} deleteSession={deleteSession} />}
+            <header className="mobile-header">
+              <div className="mobile-header-brand">
+                <div className="app-logo">G</div>
+                <div className="font-syne" style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>Grand Strategy</div>
+              </div>
+              <ThemeToggle compact />
+            </header>
+            {tab === "dashboard" && <DashboardView state={state} now={now} updateTimeline={updateTimeline} setState={setState} />}
+            {tab === "deploy" && <DeployView sessions={state.sessions} logSession={logSession} deleteSession={deleteSession} dailyGoal={getDailyGoal(state)} />}
             {tab === "syllabus" && <SyllabusView state={state} setState={setState} />}
             {tab === "focus" && <FocusView state={state} setState={setState} />}
             {tab === "planner" && <PlannerView state={state} setState={setState} />}
             {tab === "rewards" && <RewardsView state={state} setState={setState} />}
-            {tab === "analytics" && <AnalyticsView sessions={state.sessions} />}
+            {tab === "analytics" && <AnalyticsView sessions={state.sessions} dailyGoal={getDailyGoal(state)} />}
             {tab === "tests" && <TestsView tests={state.tests} logTest={logTest} deleteTest={deleteTest} />}
+            {tab === "settings" && <SettingsView state={state} setState={setState} importData={importData} resetAllData={resetAllData} />}
           </main>
 
           {/* Mobile Bottom Nav */}
@@ -628,14 +926,15 @@
       );
     }
 
-    function MiniSparkBar({ days, sessions }) {
-      const maxH = Math.max(...days.map(d => sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0)), DAILY_GOAL);
+    function MiniSparkBar({ days, sessions, dailyGoal }) {
+      const goal = dailyGoal ?? DEFAULT_DAILY_GOAL;
+      const maxH = Math.max(...days.map(d => sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0)), goal);
       return (
         <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 52 }}>
           {days.map((d, i) => {
             const h = sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0);
             const pct = h / maxH;
-            const met = h >= DAILY_GOAL;
+            const met = h >= goal;
             const isToday = i === 0;
             return (
               <div key={d} className="stagger-item" style={{ animationDelay: `${i * 0.05}s`, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, height: "100%", justifyContent: "flex-end" }}>
@@ -695,7 +994,7 @@
             const short = d.label.split(" ")[0];
             return (
               <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle"
-                fill={d.value === maxVal ? "var(--accent)" : "rgba(240,237,232,0.55)"}
+                fill={d.value === maxVal ? "var(--accent)" : "var(--text-dim)"}
                 fontSize="9" fontWeight="700" fontFamily="Space Mono, monospace">{short}</text>
             );
           })}
@@ -703,9 +1002,10 @@
       );
     }
 
-    function DashboardView({ state, now, updateTimeline }) {
+    function DashboardView({ state, now, updateTimeline, setState }) {
       const [isEditingDate, setIsEditingDate] = useState(false);
       const [tempTarget, setTempTarget] = useState(state.targetDate.split('T')[0]);
+      const dailyGoal = getDailyGoal(state);
 
       const hour = new Date(now).getHours();
       let greeting = "Good Evening", greetIcon = "🌙";
@@ -723,7 +1023,7 @@
       const last14Days = Array.from({length: 14}, (_, i) => getPastDateStr(i));
       const weeklySessions = state.sessions.filter(s => last7Days.includes(s.date));
       const weeklyHours = weeklySessions.reduce((a, s) => a + s.hours, 0);
-      const weeklyTarget = 7 * DAILY_GOAL;
+      const weeklyTarget = 7 * dailyGoal;
       const weeklyProgress = Math.min(1, weeklyHours / weeklyTarget);
       const totalHours = state.sessions.reduce((a, s) => a + s.hours, 0);
       const todayHours = state.sessions.filter(s => s.date === last7Days[0]).reduce((a, s) => a + s.hours, 0);
@@ -747,8 +1047,29 @@
       const doneTopics = Object.values(state.syllabusProgress).filter(v => v === 3).length;
       const syllPct = allTopics > 0 ? Math.round((doneTopics / allTopics) * 100) : 0;
 
-      const daysMet = last14Days.filter(d => state.sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0) >= DAILY_GOAL).length;
+      const daysMet = last14Days.filter(d => state.sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0) >= dailyGoal).length;
       const avgTest = state.tests.length ? (state.tests.reduce((a, t) => a + t.percentage, 0) / state.tests.length).toFixed(1) : null;
+      const retreatActive = !!state.tacticalRetreat;
+      const retreatLeftMs = retreatActive ? Math.max(0, (state.tacticalRetreat.startedAt + (RETREAT_WINDOW_HOURS * 3600000)) - now) : 0;
+      const retreatLeft = formatCountdown(retreatLeftMs);
+      const retreatTodayHours = state.sessions.filter(s => s.date === todayStr()).reduce((a, s) => a + s.hours, 0);
+
+      const coreSubjects = SUBJECTS.slice(0, 8);
+      const weeklySubjectHours = coreSubjects.map(sub => {
+        const value = weeklySessions.filter(s => s.subject === sub).reduce((a, s) => a + s.hours, 0);
+        return { subject: sub, value };
+      });
+      const weakestSubjects = weeklySubjectHours.sort((a, b) => a.value - b.value).slice(0, 3);
+
+      const achievements = [
+        { id: "streak7", title: "7-Day Streak", earned: state.longestStreak >= 7 },
+        { id: "hours100", title: "100 Hour Milestone", earned: totalHours >= 100 },
+        { id: "tests10", title: "10 Mock Tests", earned: state.tests.length >= 10 },
+        { id: "topics50", title: "50 Topics Mastered", earned: doneTopics >= 50 },
+      ];
+      const earnedCount = achievements.filter(a => a.earned).length;
+      const weeklyAvg = (weeklyHours / 7).toFixed(1);
+      const strongestWeekly = [...weeklySubjectHours].sort((a, b) => b.value - a.value)[0];
 
       const radarData = SUBJECTS.map(sub => ({
         label: sub,
@@ -767,10 +1088,10 @@
                 {msLeft > 0 ? "EXAM COUNTDOWN" : "CAMPAIGN COMPLETE"}
                 <button onClick={() => { setIsEditingDate(!isEditingDate); haptic('light'); }} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 9, padding: "2px 6px", borderRadius: "4px", transition: "transform 0.2s" }}>EDIT</button>
               </div>
-              <div style={{ display: "flex", gap: 16, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12, padding: "10px 16px" }}>
+              <div style={{ display: "flex", gap: 16, background: "linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%)", border: "1px solid var(--border)", borderRadius: 12, padding: "10px 16px", boxShadow: "var(--shadow-sm)" }}>
                 {[["d", "DAYS"], ["h", "HRS"], ["m", "MIN"], ["s", "SEC"]].map(([k, label]) => (
                   <div key={k} style={{ textAlign: "center", minWidth: 36 }}>
-                    <div className="font-syne" style={{ fontSize: 26, fontWeight: 800, color: msLeft < 86400000 * 7 ? "var(--danger)" : "var(--text)", lineHeight: 1 }}>{countdown[k]}</div>
+                    <div className="font-syne" style={{ fontSize: 26, fontWeight: 800, color: msLeft < 86400000 * 7 ? "var(--danger)" : "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{countdown[k]}</div>
                     <div style={{ fontSize: 8, color: "var(--text-dim)", fontWeight: 700, marginTop: 4 }}>{label}</div>
                   </div>
                 ))}
@@ -792,8 +1113,8 @@
             {[
               { icon: "🔥", label: "Active Streak", value: `${state.streak}d`, sub: "consecutive days", color: "var(--accent)" },
               { icon: "🏆", label: "Best Streak", value: `${state.longestStreak}d`, sub: "all-time record", color: "var(--success)" },
-              { icon: "⚡", label: "Today's Hours", value: `${todayHours.toFixed(1)}h`, sub: `Goal: ${DAILY_GOAL}h`, color: todayHours >= DAILY_GOAL ? "var(--success)" : "var(--accent)" },
-              { icon: "📈", label: "Total Hours", value: `${totalHours.toFixed(0)}h`, sub: `${state.sessions.length} sessions`, color: "#60A5FA" },
+              { icon: "⚡", label: "Today's Hours", value: `${todayHours.toFixed(1)}h`, sub: `Goal: ${dailyGoal}h`, color: todayHours >= dailyGoal ? "var(--success)" : "var(--accent)" },
+              { icon: "📈", label: "Total Hours", value: `${totalHours.toFixed(0)}h`, sub: `${state.sessions.length} sessions`, color: "var(--chart-blue)" },
             ].map((s, i) => (
               <div key={i} className="card stagger-item" style={{ animationDelay: `${i * 0.1}s`, padding: "18px 20px", marginBottom: 0, position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: 12, right: 14, fontSize: 22, opacity: 0.15 }}>{s.icon}</div>
@@ -814,7 +1135,7 @@
               <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid var(--border)" }}>
                 <RadialGauge value={disciplineScore} max={100} color={readinessColor} size={110} label="Discipline" sublabel={readinessStatus} />
                 <RadialGauge value={Math.round(weeklyProgress * 100)} max={100} color="var(--accent)" size={110} label="Weekly Target" sublabel={`${weeklyHours.toFixed(0)}/${weeklyTarget}h`} />
-                <RadialGauge value={syllPct} max={100} color="#60A5FA" size={110} label="Syllabus Done" sublabel={`${doneTopics}/${allTopics}`} />
+                <RadialGauge value={syllPct} max={100} color="var(--chart-blue)" size={110} label="Syllabus Done" sublabel={`${doneTopics}/${allTopics}`} />
               </div>
 
               <div>
@@ -822,11 +1143,11 @@
                   <span style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>7-Day Activity</span>
                   <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{daysMet}/7 goals met</span>
                 </div>
-                <MiniSparkBar days={last7Days.slice().reverse()} sessions={state.sessions} />
+                <MiniSparkBar days={last7Days.slice().reverse()} sessions={state.sessions} dailyGoal={dailyGoal} />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
                   {last7Days.slice().reverse().map((d, i) => {
                     const h = state.sessions.filter(s => s.date === d).reduce((a, s) => a + s.hours, 0);
-                    const met = h >= DAILY_GOAL;
+                    const met = h >= dailyGoal;
                     return <div key={d} style={{ flex: 1, textAlign: "center", fontSize: 8, color: met ? "var(--success)" : "var(--text-dim)", fontFamily: "'Space Mono', monospace" }}>{new Date(d+'T12:00:00').toLocaleDateString('en',{weekday:'narrow'})}</div>;
                   })}
                 </div>
@@ -835,12 +1156,12 @@
               <div style={{ marginTop: 16, padding: "12px 16px", background: "var(--bg2)", borderRadius: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700 }}>Today's Mission</span>
-                  <span className="font-mono" style={{ fontSize: 11, color: todayHours >= DAILY_GOAL ? "var(--success)" : "var(--accent)" }}>{todayHours.toFixed(1)} / {DAILY_GOAL}h</span>
+                  <span className="font-mono" style={{ fontSize: 11, color: todayHours >= dailyGoal ? "var(--success)" : "var(--accent)" }}>{todayHours.toFixed(1)} / {dailyGoal}h</span>
                 </div>
                 <div style={{ height: 8, background: "var(--bg2)", borderRadius: 99, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, (todayHours / DAILY_GOAL) * 100)}%`, background: todayHours >= DAILY_GOAL ? "var(--success)" : "var(--accent)", borderRadius: 99, transition: "width 1.2s cubic-bezier(0.16, 1, 0.3, 1)" }} />
+                  <div style={{ height: "100%", width: `${Math.min(100, (todayHours / dailyGoal) * 100)}%`, background: todayHours >= dailyGoal ? "var(--success)" : "var(--accent)", borderRadius: 99, transition: "width 1.2s cubic-bezier(0.16, 1, 0.3, 1)" }} />
                 </div>
-                {todayHours >= DAILY_GOAL && <div style={{ fontSize: 10, color: "var(--success)", marginTop: 6, fontWeight: 700 }}>✓ Daily goal achieved!</div>}
+                {todayHours >= dailyGoal && <div style={{ fontSize: 10, color: "var(--success)", marginTop: 6, fontWeight: 700 }}>✓ Daily goal achieved!</div>}
               </div>
             </div>
 
@@ -896,6 +1217,88 @@
             </div>
           </div>
 
+          <div className="grid-2" style={{ marginBottom: 20 }}>
+            <div className="card stagger-item" style={{ animationDelay: "0.68s", marginBottom: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span className="subtitle" style={{ margin: 0 }}>🎖️ Achievement Board</span>
+                <span className="font-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{earnedCount}/{achievements.length}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {achievements.map(a => (
+                  <div key={a.id} style={{ border: "1px solid var(--border)", background: a.earned ? "var(--success-soft)" : "var(--bg2)", color: a.earned ? "var(--success)" : "var(--text-dim)", borderRadius: 8, padding: "10px 12px", fontSize: 12, fontWeight: 600 }}>
+                    {a.earned ? "✓ " : "○ "}{a.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="card stagger-item" style={{ animationDelay: "0.72s", marginBottom: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span className="subtitle" style={{ margin: 0 }}>🧭 Weekly Review & Focus Plan</span>
+                <span className="font-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{weeklyHours.toFixed(1)}h / {weeklyTarget}h</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div style={{ background: "var(--bg2)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>Avg/day: <strong style={{ color: "var(--text)" }}>{weeklyAvg}h</strong></div>
+                <div style={{ background: "var(--bg2)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>Goals met: <strong style={{ color: "var(--text)" }}>{daysMet}/7</strong></div>
+                <div style={{ background: "var(--bg2)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>Top subject: <strong style={{ color: "var(--text)" }}>{(strongestWeekly && strongestWeekly.value > 0) ? strongestWeekly.subject : "N/A"}</strong></div>
+                <div style={{ background: "var(--bg2)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>Avg test: <strong style={{ color: "var(--text)" }}>{avgTest ? `${avgTest}%` : "N/A"}</strong></div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Weakest subjects this week (study-power focus)</div>
+              {weakestSubjects.map((x) => (
+                <div key={x.subject} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                  <span style={{ color: "var(--text)" }}>{x.subject}</span>
+                  <span className="font-mono" style={{ color: "var(--text-dim)" }}>{x.value.toFixed(1)}h</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card stagger-item" style={{ animationDelay: "0.74s", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <span className="subtitle" style={{ margin: 0 }}>🛡️ Tactical Retreat</span>
+              <span className="font-mono" style={{ fontSize: 11, color: retreatActive ? "var(--warning)" : "var(--text-dim)" }}>
+                {retreatActive ? `${retreatLeft.h}:${retreatLeft.m}:${retreatLeft.s} left` : "inactive"}
+              </span>
+            </div>
+
+            {!retreatActive ? (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  Activate fallback mode to preserve your streak with a counter-offensive: <strong>{COUNTER_OFFENSIVE_GOAL}h</strong> within {RETREAT_WINDOW_HOURS} hours.
+                </div>
+                <button
+                  className="btn"
+                  style={{ width: "auto", flexShrink: 0 }}
+                  onClick={() => {
+                    haptic('medium');
+                    setState(s => ({ ...s, tacticalRetreat: { startedAt: Date.now(), streakBefore: s.streak } }));
+                  }}
+                >
+                  Activate
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>
+                  Counter-offensive progress: <strong style={{ color: retreatTodayHours >= COUNTER_OFFENSIVE_GOAL ? "var(--success)" : "var(--accent)" }}>{retreatTodayHours.toFixed(1)} / {COUNTER_OFFENSIVE_GOAL}h</strong>
+                </div>
+                <div style={{ height: 8, background: "var(--bg2)", borderRadius: 99, overflow: "hidden", marginBottom: 10 }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, (retreatTodayHours / COUNTER_OFFENSIVE_GOAL) * 100)}%`, background: "var(--warning)", borderRadius: 99 }} />
+                </div>
+                <button
+                  className="btn"
+                  style={{ width: "auto" }}
+                  onClick={() => {
+                    haptic('light');
+                    setState(s => ({ ...s, tacticalRetreat: null }));
+                  }}
+                >
+                  Cancel Retreat
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <h2 className="font-syne" style={{ fontSize: 16, fontWeight: 700 }}>Recent Operations</h2>
             <span style={{ fontSize: 10, color: "var(--text-dim)" }}>LAST {Math.min(5, state.sessions.length)} ENTRIES</span>
@@ -926,7 +1329,7 @@
     }
 
     // ─── VIEW 2: DEPLOY (LOGGING) ───
-    function DeployView({ sessions, logSession, deleteSession }) {
+    function DeployView({ sessions, logSession, deleteSession, dailyGoal }) {
       const [subject, setSubject] = useState(SUBJECTS[0]);
       const [deployType, setDeployType] = useState(DEPLOYMENT_TYPES[0]);
       const [hours, setHours] = useState(1);
@@ -940,7 +1343,15 @@
       };
 
       const todayHours = sessions.filter(s => s.date === todayStr()).reduce((a, b) => a + b.hours, 0);
-      const ratingRaw = Math.min(100, Math.round((todayHours / DAILY_GOAL) * 100));
+      const goal = dailyGoal ?? DEFAULT_DAILY_GOAL;
+      const ratingRaw = Math.min(100, Math.round((todayHours / goal) * 100));
+      const last7 = Array.from({ length: 7 }, (_, i) => getPastDateStr(i));
+      const answerWritingHours = sessions
+        .filter(s => last7.includes(s.date) && s.type === "Answer Writing")
+        .reduce((a, s) => a + s.hours, 0);
+      const focusedRevisionHours = sessions
+        .filter(s => last7.includes(s.date) && (s.type === "Revision" || s.type === "Mock Test Analysis"))
+        .reduce((a, s) => a + s.hours, 0);
       
       let rank = "D"; let rankColor = "var(--text-muted)";
       if (ratingRaw >= 100) { rank = "S"; rankColor = "var(--success)"; }
@@ -978,7 +1389,11 @@
               <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 32px", marginBottom: 0 }}>
                 <div>
                   <span className="subtitle" style={{ marginBottom: 4 }}>Daily Discipline</span>
-                  <div style={{ fontSize: 13, color: "var(--text-dim)" }}>Target: {DAILY_GOAL}h</div>
+                  <div style={{ fontSize: 13, color: "var(--text-dim)" }}>Target: {goal}h</div>
+                  <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 99, background: "var(--bg2)", color: "var(--text-dim)" }}>Answer Writing (7d): {answerWritingHours.toFixed(1)}h</span>
+                    <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 99, background: "var(--bg2)", color: "var(--text-dim)" }}>Revision+Analysis (7d): {focusedRevisionHours.toFixed(1)}h</span>
+                  </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
                   <div style={{ textAlign: "right" }}>
@@ -1312,7 +1727,7 @@
               <button className="btn" style={{ width: "auto", background: !isWork ? "var(--hover)" : "transparent", color: !isWork ? "var(--success)" : "var(--text-dim)" }} onClick={() => setMode(false)}>Break (5m)</button>
             </div>
 
-            <div className="font-mono" style={{ fontSize: isFullscreen ? 140 : 80, fontWeight: 700, color: isWork ? "var(--accent)" : "var(--success)", lineHeight: 1, marginBottom: 32, transition: 'all 0.5s ease', textShadow: isActive ? `0 0 20px ${isWork ? 'var(--accent-soft)' : 'rgba(74,222,128,0.4)'}` : 'none' }}>
+            <div className="font-mono" style={{ fontSize: isFullscreen ? 140 : 80, fontWeight: 700, color: isWork ? "var(--accent)" : "var(--success)", lineHeight: 1, marginBottom: 32, transition: 'all 0.5s ease', textShadow: isActive ? `0 0 24px ${isWork ? 'var(--accent-mid)' : 'var(--success-soft)'}` : 'none' }}>
               {formatTime(timeLeft)}
             </div>
 
@@ -1491,9 +1906,55 @@
     }
 
     // ─── VIEW 7: ANALYTICS (HEATMAP & CHARTS) ───
-    function AnalyticsView({ sessions }) {
+    function AnalyticsView({ sessions, dailyGoal }) {
       const [timeframe, setTimeframe] = useState('weekly'); 
       const [lineTimeframe, setLineTimeframe] = useState('week');
+      const [selectedSubject, setSelectedSubject] = useState(null);
+      const goal = dailyGoal ?? DEFAULT_DAILY_GOAL;
+
+      const subjectTotals = useMemo(() => {
+        const map = {};
+        SUBJECTS.forEach(s => { map[s] = 0; });
+        sessions.forEach(s => {
+          map[s.subject] = (map[s.subject] || 0) + s.hours;
+        });
+        return SUBJECTS.map(subject => ({ subject, hours: map[subject] || 0 }))
+          .sort((a, b) => b.hours - a.hours);
+      }, [sessions]);
+
+      const subjectSessions = useMemo(() => {
+        if (!selectedSubject) return [];
+        return sessions.filter(s => s.subject === selectedSubject);
+      }, [sessions, selectedSubject]);
+
+      const subjectLineData = useMemo(() => {
+        if (!selectedSubject) return [];
+        const data = [];
+        for (let i = 29; i >= 0; i--) {
+          const dStr = getPastDateStr(i);
+          const hrs = sessions
+            .filter(s => s.date === dStr && s.subject === selectedSubject)
+            .reduce((a, b) => a + b.hours, 0);
+          data.push({ date: dStr, value: hrs });
+        }
+        return data;
+      }, [sessions, selectedSubject]);
+
+      const subjectTypeBreakdown = useMemo(() => {
+        const map = {};
+        subjectSessions.forEach(s => {
+          const t = s.type || "General";
+          map[t] = (map[t] || 0) + s.hours;
+        });
+        return Object.entries(map).sort((a, b) => b[1] - a[1]);
+      }, [subjectSessions]);
+
+      const subjectLast7 = useMemo(() => {
+        const days = Array.from({ length: 7 }, (_, i) => getPastDateStr(i));
+        return subjectSessions
+          .filter(s => days.includes(s.date))
+          .reduce((a, s) => a + s.hours, 0);
+      }, [subjectSessions]);
 
       const lineDays = lineTimeframe === 'week' ? 7 : 30;
       const lineData = useMemo(() => {
@@ -1506,11 +1967,12 @@
         return data;
       }, [sessions, lineDays]);
 
-      const renderLineChart = () => {
+      const renderLineChart = (data, daysCount, showGoalLine = true) => {
         const w = 800, h = 180;
-        const maxVal = Math.max(...lineData.map(d => d.value), DAILY_GOAL, 1);
-        const pts = lineData.map((d, i) => {
-          const x = (i / (lineDays - 1)) * w;
+        const maxVal = Math.max(...data.map(d => d.value), showGoalLine ? goal : 0, 1);
+        const denom = Math.max(daysCount - 1, 1);
+        const pts = data.map((d, i) => {
+          const x = (i / denom) * w;
           const y = h - (d.value / maxVal) * h;
           return {x, y, ...d};
         });
@@ -1521,7 +1983,9 @@
             <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
                <line x1="0" y1={h} x2={w} y2={h} stroke="var(--border)" strokeWidth="1" />
                <line x1="0" y1={h/2} x2={w} y2={h/2} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
-               <line x1="0" y1={h - (DAILY_GOAL/maxVal)*h} x2={w} y2={h - (DAILY_GOAL/maxVal)*h} stroke="var(--success)" strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
+               {showGoalLine && (
+                 <line x1="0" y1={h - (goal/maxVal)*h} x2={w} y2={h - (goal/maxVal)*h} stroke="var(--success)" strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
+               )}
                <polyline points={pointsStr} fill="none" stroke="var(--accent)" strokeWidth="2" style={{ transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }} />
                {pts.map((p, i) => (
                   <g key={i} className="chart-pt">
@@ -1546,9 +2010,9 @@
 
       const getColorForHours = (h) => {
         if (h === 0) return "var(--bg3)";
-        if (h < 3) return "rgba(218,119,86,0.2)";
-        if (h < 6) return "rgba(218,119,86,0.45)";
-        if (h < 9) return "rgba(218,119,86,0.72)";
+        if (h < 3) return "var(--heatmap-1)";
+        if (h < 6) return "var(--heatmap-2)";
+        if (h < 9) return "var(--heatmap-3)";
         return "var(--accent)";
       };
 
@@ -1586,7 +2050,90 @@
           <span className="subtitle">Intelligence & Metrics</span>
           <h1 className="title">Analytics Engine</h1>
 
-          <div className="card stagger-item" style={{ marginTop: 32 }}>
+          <div className="card" style={{ marginTop: 32 }}>
+            <span className="subtitle">Subject Drilldown</span>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+              Select a subject to inspect 30-day trend, operation mix, and recent sessions.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: selectedSubject ? 20 : 0 }}>
+              {subjectTotals.map(({ subject, hours }) => (
+                <button
+                  key={subject}
+                  type="button"
+                  className="btn"
+                  style={{
+                    width: "auto",
+                    padding: "8px 14px",
+                    fontSize: 12,
+                    background: selectedSubject === subject ? "var(--accent-soft)" : "var(--bg2)",
+                    borderColor: selectedSubject === subject ? "var(--accent-mid)" : "var(--border)",
+                    color: selectedSubject === subject ? "var(--text)" : "var(--text-muted)",
+                  }}
+                  onClick={() => {
+                    haptic('light');
+                    setSelectedSubject(selectedSubject === subject ? null : subject);
+                  }}
+                >
+                  {subject} <span className="font-mono" style={{ opacity: 0.7 }}>({hours.toFixed(1)}h)</span>
+                </button>
+              ))}
+            </div>
+
+            {selectedSubject && (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+                  <h2 className="font-syne" style={{ fontSize: 18, fontWeight: 700 }}>{selectedSubject}</h2>
+                  <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--text-muted)" }}>
+                    <span>All-time: <strong style={{ color: "var(--text)" }}>{subjectSessions.reduce((a, s) => a + s.hours, 0).toFixed(1)}h</strong></span>
+                    <span>Last 7d: <strong style={{ color: "var(--accent)" }}>{subjectLast7.toFixed(1)}h</strong></span>
+                  </div>
+                </div>
+
+                {subjectSessions.length === 0 ? (
+                  <div style={{ color: "var(--text-dim)", fontSize: 13, padding: "20px 0" }}>No sessions logged for this subject yet.</div>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: 20 }}>
+                      <span style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>30-day hours</span>
+                      {renderLineChart(subjectLineData, 30, false)}
+                    </div>
+
+                    <div className="grid-2" style={{ marginBottom: 16 }}>
+                      <div>
+                        <span style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, display: "block", marginBottom: 10 }}>By operation type</span>
+                        {subjectTypeBreakdown.map(([type, hrs]) => {
+                          const total = subjectSessions.reduce((a, s) => a + s.hours, 0) || 1;
+                          const pct = Math.round((hrs / total) * 100);
+                          return (
+                            <div key={type} style={{ marginBottom: 10 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                <span style={{ color: "var(--text-muted)" }}>{type}</span>
+                                <span className="font-mono" style={{ color: "var(--text)" }}>{hrs.toFixed(1)}h ({pct}%)</span>
+                              </div>
+                              <div style={{ height: 6, background: "var(--bg3)", borderRadius: 99, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)", borderRadius: 99 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, display: "block", marginBottom: 10 }}>Recent sessions</span>
+                        {subjectSessions.slice().reverse().slice(0, 8).map(s => (
+                          <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+                            <span style={{ color: "var(--text-muted)" }}>{s.type || "General"} · {s.date}</span>
+                            <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 600 }}>{s.hours}h</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="card stagger-item">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="subtitle" style={{ margin: 0 }}>Daily Hours Activity</span>
               <div style={{ display: "flex", gap: 8 }}>
@@ -1594,7 +2141,7 @@
                 <button onClick={() => { setLineTimeframe('month'); haptic('light'); }} style={{ background: lineTimeframe==='month'?'var(--bg3)':'transparent', border: 'none', color: lineTimeframe==='month'?'var(--text)':'var(--text-dim)', padding: '4px 8px', borderRadius: 5, fontSize: 10, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}>MONTH</button>
               </div>
             </div>
-            {renderLineChart()}
+            {renderLineChart(lineData, lineDays, true)}
           </div>
 
           <div className="grid-2">
@@ -1751,6 +2298,158 @@
       );
     }
 
+    function SettingsView({ state, setState, importData, resetAllData }) {
+      const [importMsg, setImportMsg] = useState("");
+      const [goalInput, setGoalInput] = useState(String(getDailyGoal(state)));
+      const [goalSaved, setGoalSaved] = useState(false);
+
+      useEffect(() => {
+        setGoalInput(String(getDailyGoal(state)));
+      }, [state.dailyGoalHours]);
+
+      const saveDailyGoal = (value) => {
+        const v = typeof value === "number" ? value : parseFloat(goalInput);
+        if (!Number.isFinite(v) || v < 1 || v > 16) {
+          haptic('error');
+          return;
+        }
+        const rounded = Math.round(v * 2) / 2;
+        setState(s => ({ ...s, dailyGoalHours: rounded }));
+        setGoalInput(String(rounded));
+        setGoalSaved(true);
+        haptic('success');
+        setTimeout(() => setGoalSaved(false), 2000);
+      };
+
+      const exportData = () => {
+        haptic('success');
+        const payload = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          data: state
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `grand-strategy-backup-${todayStr()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      };
+
+      const onImportFile = async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          const payload = parsed && typeof parsed === "object" && parsed.data ? parsed.data : parsed;
+          if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+            throw new Error("Invalid backup file");
+          }
+          importData(payload);
+          setImportMsg("Backup imported successfully.");
+          haptic('success');
+        } catch (err) {
+          setImportMsg("Import failed. Please choose a valid backup JSON.");
+          haptic('error');
+        } finally {
+          e.target.value = "";
+        }
+      };
+
+      return (
+        <div className="animate-in">
+          <span className="subtitle">Control Center</span>
+          <h1 className="title">Settings & Data</h1>
+
+          <div className="grid-2" style={{ marginTop: 32 }}>
+            <div className="card">
+              <span className="subtitle">Study Goals</span>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                Set your daily hour target. Streaks, dashboard progress, and analytics goal lines use this value.
+              </p>
+              <label style={{ fontSize: 12, color: "var(--text-dim)", display: "block", marginBottom: 8 }}>Daily study goal (hours)</label>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+                <input
+                  type="number"
+                  className="input-base font-mono"
+                  min="1"
+                  max="16"
+                  step="0.5"
+                  value={goalInput}
+                  onChange={e => { setGoalInput(e.target.value); haptic('tick'); }}
+                  onKeyDown={e => e.key === 'Enter' && saveDailyGoal()}
+                  style={{ maxWidth: 120 }}
+                />
+                <button className="btn primary" style={{ width: "auto", padding: "10px 20px" }} onClick={() => saveDailyGoal()}>Save goal</button>
+                {goalSaved && <span style={{ fontSize: 12, color: "var(--success)", fontWeight: 600 }}>Saved</span>}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[6, 8, 10, 12].map(h => (
+                  <button
+                    key={h}
+                    type="button"
+                    className="btn"
+                    style={{
+                      width: "auto",
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      background: getDailyGoal(state) === h ? "var(--accent-soft)" : "var(--bg2)",
+                      borderColor: getDailyGoal(state) === h ? "var(--accent-mid)" : "var(--border)",
+                    }}
+                    onClick={() => saveDailyGoal(h)}
+                  >
+                    {h}h
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}>
+                Weekly target is automatically {getDailyGoal(state) * 7}h (7 × daily goal).
+              </p>
+            </div>
+
+            <div className="card">
+              <span className="subtitle">Appearance</span>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                Switch between light and dark mode. Your choice is saved on this device.
+              </p>
+              <ThemeToggle />
+            </div>
+          </div>
+
+          <div className="grid-2">
+            <div className="card">
+              <span className="subtitle">Backup & Restore</span>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                Export your complete strategy data to JSON, then restore it anytime on this or another device.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+                <button className="btn primary" style={{ width: "auto", padding: "10px 18px" }} onClick={exportData}>Export Backup</button>
+                <label className="btn" style={{ width: "auto", padding: "10px 18px", cursor: "pointer" }}>
+                  Import Backup
+                  <input type="file" accept=".json,application/json" onChange={onImportFile} style={{ display: "none" }} />
+                </label>
+              </div>
+              {importMsg && <div style={{ fontSize: 12, color: "var(--text-dim)" }}>{importMsg}</div>}
+            </div>
+
+            <div className="card">
+              <span className="subtitle">Danger Zone</span>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                Reset will wipe all sessions, tests, planner tasks, rewards, progress and streaks.
+              </p>
+              <button className="btn" style={{ width: "auto", color: "var(--danger)", borderColor: "var(--danger-soft)" }} onClick={resetAllData}>
+                Reset All Data
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
@@ -1783,17 +2482,17 @@
     }
   </script>
 
-  <div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#fff;border-top:1px solid #e5e4e2;padding:14px 20px;align-items:center;justify-content:space-between;gap:12px;">
+  <div id="install-banner" class="install-banner">
     <div style="display:flex;align-items:center;gap:12px;">
-      <div style="width:36px;height:36px;background:#1a1a18;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:18px;flex-shrink:0;">G</div>
+      <div class="app-logo" style="width:36px;height:36px;font-size:18px;border-radius:8px;">G</div>
       <div>
-        <div style="font-size:14px;font-weight:500;color:#1a1a18;font-family:'DM Sans',sans-serif;">Install Grand Strategy</div>
-        <div style="font-size:12px;color:#a3a39f;font-family:'DM Sans',sans-serif;">Add to home screen for offline access</div>
+        <div class="install-banner-title">Install Grand Strategy</div>
+        <div class="install-banner-sub">Add to home screen for offline access</div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-shrink:0;">
-      <button onclick="dismissBanner()" style="padding:8px 14px;border:1px solid #e5e4e2;background:#f9f9f8;border-radius:7px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:#6b6b68;">Not now</button>
-      <button onclick="installPWA()" style="padding:8px 14px;border:none;background:#1a1a18;color:#fff;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">Install</button>
+    <div class="install-banner-actions">
+      <button type="button" class="btn" style="width:auto;padding:8px 14px;" onclick="dismissBanner()">Not now</button>
+      <button type="button" class="btn primary" style="width:auto;padding:8px 14px;" onclick="installPWA()">Install</button>
     </div>
   </div>
 </body>
