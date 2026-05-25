@@ -29,6 +29,32 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiftfAqGA8jX_BkGDZITGESs-revWSlrw",
+      authDomain: "grand-strategy-4ec9a.firebaseapp.com",
+      databaseURL: "https://grand-strategy-4ec9a-default-rtdb.firebaseio.com",
+      projectId: "grand-strategy-4ec9a",
+      storageBucket: "grand-strategy-4ec9a.firebasestorage.app",
+      messagingSenderId: "1086849202691",
+      appId: "1:1086849202691:web:12b47790fcb3cfe218ec36",
+      measurementId: "G-6Y9G1PGWY1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    // Expose to window for JSX code
+    window._gsFirebase = { auth, db, ref, set, onValue, off, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, googleProvider, signInWithPopup, onAuthStateChanged };
+  </script>
+
   <style>
     /* ─── THEME TOKENS (light default) ─── */
     :root,
@@ -938,13 +964,340 @@
       .tab-btn .tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .toast-host { left: 16px; right: 16px; top: 12px; max-width: none; }
     }
+
+    /* ─── AUTH SCREEN ─── */
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background:
+        radial-gradient(ellipse 120% 80% at 100% -20%, var(--accent-soft), transparent 50%),
+        radial-gradient(ellipse 80% 50% at -10% 100%, rgba(96, 165, 250, 0.06), transparent 45%),
+        var(--bg);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .auth-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .auth-logo {
+      width: 40px; height: 40px;
+      background: var(--logo-bg);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--logo-fg);
+      font-weight: 700; font-size: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .auth-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+    .auth-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .auth-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .auth-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--bg); }
+    .auth-input::placeholder { color: var(--text-dim); }
+    .auth-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: var(--text);
+      color: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 4px;
+    }
+    .auth-btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .auth-btn:active { transform: scale(0.98); }
+    .auth-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .auth-google-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 10px;
+    }
+    .auth-google-btn:hover { background: var(--bg2); border-color: var(--border-strong); transform: translateY(-1px); }
+    .auth-google-btn:active { transform: scale(0.98); }
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 18px 0;
+      font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+    .auth-switch-btn { background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0; }
+    .auth-switch-btn:hover { text-decoration: underline; }
+    .auth-error { background: var(--danger-soft); border: 1px solid rgba(192,57,43,0.3); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--danger); margin-bottom: 14px; }
+    .auth-success { background: var(--success-soft); border: 1px solid rgba(45,134,83,0.3); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--success); margin-bottom: 14px; }
+
+    /* Splash/Loading */
+    .splash-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--bg);
+    }
+    .splash-logo {
+      width: 56px; height: 56px;
+      background: var(--logo-bg);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--logo-fg); font-weight: 700; font-size: 26px;
+      box-shadow: var(--shadow-md);
+      animation: splashPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes splashPop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+    .splash-text { font-size: 14px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; animation: syncBlink 1s infinite ease-in-out; }
+    .sync-dot:nth-child(2) { animation-delay: 0.2s; }
+    .sync-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes syncBlink { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+    /* Sync status in sidebar */
+    .sync-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      border-radius: 99px;
+      background: var(--success-soft);
+      border: 1px solid rgba(45,134,83,0.25);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--success);
+      width: 100%;
+    }
+    .sync-badge.syncing { background: var(--accent-soft); border-color: var(--accent-mid); color: var(--accent); }
+    .sync-badge.offline { background: var(--warning-soft); border-color: rgba(180,83,9,0.25); color: var(--warning); }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .sidebar-avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-mid);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .sidebar-user-info { flex: 1; min-width: 0; }
+    .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-email { font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .signout-btn { background: none; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: 5px; transition: all 0.15s; font-size: 14px; flex-shrink: 0; }
+    .signout-btn:hover { color: var(--danger); background: var(--danger-soft); }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useCallback } = React;
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    // ─── FIREBASE HELPERS ───
+    const fb = () => window._gsFirebase;
+
+    // ─── AUTH SCREEN ───
+    function AuthScreen({ onAuth }) {
+      const [mode, setMode] = useState('login'); // login | signup | reset
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+      const [msg, setMsg] = useState('');
+
+      const clearErr = () => { setError(''); setMsg(''); };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true); clearErr();
+        try {
+          const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } = fb();
+          if (mode === 'login') {
+            await signInWithEmailAndPassword(auth, email.trim(), password);
+          } else if (mode === 'signup') {
+            if (password.length < 6) throw new Error("Password must be at least 6 characters.");
+            await createUserWithEmailAndPassword(auth, email.trim(), password);
+          } else {
+            await sendPasswordResetEmail(auth, email.trim());
+            setMsg('Password reset email sent! Check your inbox.');
+            setLoading(false); return;
+          }
+        } catch (err) {
+          const map = {
+            'auth/user-not-found': 'No account found with this email.',
+            'auth/wrong-password': 'Incorrect password.',
+            'auth/email-already-in-use': 'Email already in use. Try logging in.',
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/invalid-credential': 'Invalid email or password.',
+            'auth/too-many-requests': 'Too many attempts. Try again later.',
+          };
+          setError(map[err.code] || err.message);
+        }
+        setLoading(false);
+      };
+
+      const handleGoogle = async () => {
+        clearErr(); setLoading(true);
+        try {
+          const { auth, googleProvider, signInWithPopup } = fb();
+          await signInWithPopup(auth, googleProvider);
+        } catch (err) {
+          if (err.code !== 'auth/popup-closed-by-user') setError(err.message);
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="auth-screen">
+          <div className="auth-card">
+            <div className="auth-logo-row">
+              <div className="auth-logo">G</div>
+              <div>
+                <div className="auth-title">Grand Strategy</div>
+                <div className="auth-sub">UPSC Command Center</div>
+              </div>
+            </div>
+
+            {error && <div className="auth-error">⚠ {error}</div>}
+            {msg && <div className="auth-success">✓ {msg}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div className="auth-field">
+                <label className="auth-label">Email</label>
+                <input className="auth-input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
+              </div>
+              {mode !== 'reset' && (
+                <div className="auth-field">
+                  <label className="auth-label">Password</label>
+                  <input className="auth-input" type="password" placeholder={mode === 'signup' ? 'Min. 6 characters' : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required minLength={mode === 'signup' ? 6 : undefined} />
+                </div>
+              )}
+              <button className="auth-btn" type="submit" disabled={loading}>
+                {loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+              </button>
+            </form>
+
+            {mode !== 'reset' && (
+              <>
+                <div className="auth-divider">or</div>
+                <button className="auth-google-btn" onClick={handleGoogle} disabled={loading} type="button">
+                  <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+                  Continue with Google
+                </button>
+              </>
+            )}
+
+            <div className="auth-switch">
+              {mode === 'login' && <>
+                <span>No account? </span>
+                <button className="auth-switch-btn" onClick={() => { setMode('signup'); clearErr(); }}>Create one</button>
+                <span> · </span>
+                <button className="auth-switch-btn" onClick={() => { setMode('reset'); clearErr(); }}>Forgot password?</button>
+              </>}
+              {mode === 'signup' && <>
+                <span>Have an account? </span>
+                <button className="auth-switch-btn" onClick={() => { setMode('login'); clearErr(); }}>Sign in</button>
+              </>}
+              {mode === 'reset' && <>
+                <button className="auth-switch-btn" onClick={() => { setMode('login'); clearErr(); }}>← Back to sign in</button>
+              </>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── SPLASH SCREEN ───
+    function SplashScreen({ label = "Syncing…" }) {
+      return (
+        <div className="splash-screen">
+          <div className="splash-logo">G</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <span className="sync-dot" />
+            <span className="sync-dot" />
+            <span className="sync-dot" />
+          </div>
+          <div className="splash-text">{label}</div>
+        </div>
+      );
+    }
+
+    // ─── SYNC STATUS BADGE ───
+    function SyncBadge({ status }) {
+      const cfg = {
+        synced: { cls: '', icon: '☁', label: 'Synced' },
+        syncing: { cls: ' syncing', icon: '↑', label: 'Syncing…' },
+        offline: { cls: ' offline', icon: '⚠', label: 'Offline' },
+      };
+      const c = cfg[status] || cfg.synced;
+      return <div className={`sync-badge${c.cls}`}><span>{c.icon}</span>{c.label}</div>;
+    }
+
+    // ─── USER PANEL (sidebar) ───
+    function UserPanel({ user, syncStatus, onSignOut }) {
+      const initials = user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : (user?.email?.[0] || '?').toUpperCase();
+      const name = user?.displayName || user?.email?.split('@')[0] || 'User';
+      return (
+        <div style={{ marginBottom: 12 }}>
+          <div className="sidebar-user">
+            {user?.photoURL
+              ? <img src={user.photoURL} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} alt="" />
+              : <div className="sidebar-avatar">{initials}</div>
+            }
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{name}</div>
+              <div className="sidebar-user-email">{user?.email}</div>
+            </div>
+            <button className="signout-btn" onClick={onSignOut} title="Sign out">⏏</button>
+          </div>
+          <SyncBadge status={syncStatus} />
+        </div>
+      );
+    }
+
 
     // ─── TACTICAL HAPTIC ENGINE ───
     const haptic = (type = 'light') => {
@@ -1213,13 +1566,44 @@
     }
 
     // ─── MAIN APP COMPONENT ───
-    function App() {
+    function App({ user, syncStatus, setSyncStatus, cloudLoaded, setCloudLoaded }) {
       const [state, setState] = useState(getInitialState);
       const [tab, setTab] = useState(getTabFromUrl);
+      const saveTimerRef = useRef(null);
+      const cloudSaveTimerRef = useRef(null);
+      const listenerRef = useRef(null);
 
-      // ── Isolated clock component so only it re-renders every second ──
+      // ── Cloud sync: load data from Firebase on mount ──
+      useEffect(() => {
+        if (!user || cloudLoaded) return;
+        const { db, ref, onValue, off } = fb();
+        const userRef = ref(db, `users/${user.uid}/state`);
+        setSyncStatus('syncing');
 
-      const saveTimerRef = React.useRef(null);
+        const handleValue = (snapshot) => {
+          if (!cloudLoaded) {
+            // First load: merge cloud over local
+            const cloudData = snapshot.val();
+            if (cloudData) {
+              setState(localState => ({
+                ...createDefaultState(),
+                ...localState,
+                ...cloudData,
+              }));
+            }
+            setCloudLoaded(true);
+            setSyncStatus('synced');
+          }
+        };
+
+        onValue(userRef, handleValue, { onlyOnce: true });
+        listenerRef.current = { userRef, handleValue };
+        return () => {
+          if (listenerRef.current) off(listenerRef.current.userRef);
+        };
+      }, [user, cloudLoaded]);
+
+      // ── Save to localStorage (debounced 400ms) ──
       useEffect(() => {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
@@ -1229,6 +1613,32 @@
         }, 400);
         return () => clearTimeout(saveTimerRef.current);
       }, [state]);
+
+      // ── Save to Firebase (debounced 1500ms) ──
+      useEffect(() => {
+        if (!user || !cloudLoaded) return;
+        setSyncStatus('syncing');
+        if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
+        cloudSaveTimerRef.current = setTimeout(async () => {
+          try {
+            const { db, ref, set } = fb();
+            const { _confirmReset, ...toSave } = state;
+            await set(ref(db, `users/${user.uid}/state`), toSave);
+            setSyncStatus('synced');
+          } catch(e) {
+            console.warn("[GS] Cloud save failed:", e);
+            setSyncStatus('offline');
+          }
+        }, 1500);
+        return () => clearTimeout(cloudSaveTimerRef.current);
+      }, [state, user, cloudLoaded]);
+
+      const handleSignOut = async () => {
+        const { auth, signOut } = fb();
+        await signOut(auth);
+      };
+
+      // ── Isolated clock component so only it re-renders every second ──
 
       useEffect(() => {
         setTabInUrl(tab);
@@ -1328,6 +1738,7 @@
 
       return (
         <div className="app-layout">
+          {!cloudLoaded && <div style={{position:'fixed',inset:0,zIndex:9999}}><SplashScreen label="Syncing your data…" /></div>}
           <ToastHost />
           {/* Desktop Sidebar */}
           <aside className="sidebar">
@@ -1338,6 +1749,7 @@
                 <div className="sidebar-brand-sub">UPSC Command Center</div>
               </div>
             </div>
+            <UserPanel user={user} syncStatus={syncStatus} onSignOut={handleSignOut} />
             
             <div className="sidebar-nav">
               {NAV_GROUPS.map(group => (
@@ -1381,7 +1793,7 @@
               {tab === "analytics" && <AnalyticsView sessions={state.sessions} dailyGoal={getDailyGoal(state)} />}
               {tab === "tests" && <TestsView tests={state.tests} logTest={logTest} deleteTest={deleteTest} />}
               {tab === "journal" && <JournalView state={state} setState={setState} />}
-              {tab === "settings" && <SettingsView state={state} setState={setState} importData={importData} resetAllData={resetAllData} />}
+              {tab === "settings" && <SettingsView state={state} setState={setState} importData={importData} resetAllData={resetAllData} user={user} syncStatus={syncStatus} onSignOut={handleSignOut} />}
             </div>
           </main>
 
@@ -3321,7 +3733,7 @@
       );
     }
 
-    function SettingsView({ state, setState, importData, resetAllData }) {
+    function SettingsView({ state, setState, importData, resetAllData, user, syncStatus, onSignOut }) {
       const [importMsg, setImportMsg] = useState("");
       const [goalInput, setGoalInput] = useState(String(getDailyGoal(state)));
       const [goalSaved, setGoalSaved] = useState(false);
@@ -3453,18 +3865,26 @@
 
           <div className="grid-2">
             <div className="card">
-              <span className="subtitle">Backup & Restore</span>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-                Export your complete strategy data to JSON, then restore it anytime on this or another device.
-              </p>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-                <button className="btn primary" style={{ width: "auto", padding: "10px 18px" }} onClick={exportData}>Export Backup</button>
-                <label className="btn" style={{ width: "auto", padding: "10px 18px", cursor: "pointer" }}>
-                  Import Backup
-                  <input type="file" accept=".json,application/json" onChange={onImportFile} style={{ display: "none" }} />
-                </label>
+              <span className="subtitle">Cloud Account</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: "12px 14px", background: "var(--bg2)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                {user?.photoURL
+                  ? <img src={user.photoURL} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} alt="" />
+                  : <div className="sidebar-avatar" style={{ width: 36, height: 36 }}>{(user?.displayName || user?.email || '?')[0].toUpperCase()}</div>
+                }
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user?.displayName || user?.email?.split('@')[0] || 'User'}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-dim)" }}>{user?.email}</div>
+                </div>
               </div>
-              {importMsg && <div style={{ fontSize: 12, color: "var(--text-dim)" }}>{importMsg}</div>}
+              <div style={{ marginBottom: 12 }}>
+                <SyncBadge status={syncStatus} />
+              </div>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
+                Your data syncs automatically to the cloud. Sign in on any device to access your progress.
+              </p>
+              <button className="btn" style={{ width: "auto", color: "var(--danger)", borderColor: "var(--danger-soft)" }} onClick={onSignOut}>
+                Sign Out
+              </button>
             </div>
 
             <div className="card">
@@ -3491,8 +3911,32 @@
       );
     }
 
+    // ─── FIREBASE ROOT — wraps the whole app with auth + sync ───
+    function FirebaseRoot() {
+      const [authState, setAuthState] = useState('loading'); // loading | unauthed | authed
+      const [user, setUser] = useState(null);
+      const [syncStatus, setSyncStatus] = useState('synced');
+      const [cloudLoaded, setCloudLoaded] = useState(false);
+
+      // Listen for auth changes
+      useEffect(() => {
+        const { auth, onAuthStateChanged } = fb();
+        const unsub = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setAuthState(u ? 'authed' : 'unauthed');
+          if (!u) setCloudLoaded(false);
+        });
+        return unsub;
+      }, []);
+
+      if (authState === 'loading') return <SplashScreen label="Loading…" />;
+      if (authState === 'unauthed') return <AuthScreen />;
+
+      return <App user={user} syncStatus={syncStatus} setSyncStatus={setSyncStatus} cloudLoaded={cloudLoaded} setCloudLoaded={setCloudLoaded} />;
+    }
+
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(<FirebaseRoot />);
   </script>
 
   <script>
