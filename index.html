@@ -282,24 +282,24 @@
     @media (max-width: 768px) {
       .app-layout { flex-direction: column; }
       .sidebar { display: none; }
-      .main-content { padding: 20px 16px; padding-bottom: 90px; }
+      .main-content { padding: 16px 14px; padding-bottom: 100px; }
       .mobile-header { display: flex; }
 
       .bottom-nav {
         display: flex;
         position: fixed; bottom: 0; left: 0; right: 0;
         background: var(--surface-overlay);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid var(--border);
-        padding: 10px 16px 22px;
+        padding: 4px 4px calc(14px + env(safe-area-inset-bottom, 0px));
         z-index: 100;
         overflow-x: auto;
-        gap: 4px;
+        gap: 0;
         transition: transform 0.3s ease, background 0.25s ease;
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 -1px 0 var(--border), 0 -4px 20px rgba(0, 0, 0, 0.05);
       }
-      [data-theme="dark"] .bottom-nav { box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35); }
+      [data-theme="dark"] .bottom-nav { box-shadow: 0 -1px 0 var(--border), 0 -4px 20px rgba(0, 0, 0, 0.3); }
       .bottom-nav::-webkit-scrollbar { display: none; }
     }
 
@@ -473,31 +473,40 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
       background: none;
       border: none;
       cursor: pointer;
       color: var(--text-dim);
-      transition: all 0.15s ease;
+      transition: color 0.15s ease;
       font-family: 'DM Sans', sans-serif;
-      font-size: 9.5px;
-      font-weight: 500;
+      font-size: 9px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 6px 8px 10px;
+      letter-spacing: 0.05em;
+      padding: 4px 6px 8px;
       border-radius: var(--radius-sm);
     }
-    .tab-btn:active { transform: scale(0.94); }
-    .tab-btn:hover { color: var(--text); background: var(--hover); }
-    .tab-btn.active { color: var(--accent); background: var(--accent-soft); }
-    .tab-btn span.icon { font-size: 18px; transition: transform 0.2s ease; }
-    .tab-btn.active span.icon { transform: scale(1.12); }
+    .tab-btn:active { transform: scale(0.9); }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn span.icon {
+      font-size: 20px;
+      width: 44px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 99px;
+      transition: background 0.2s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .tab-btn.active span.icon {
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
     .tab-btn.active::after {
       content: "";
       position: absolute;
-      bottom: 2px; left: 50%;
+      bottom: 3px; left: 50%;
       transform: translateX(-50%);
-      width: 4px; height: 4px;
+      width: 18px; height: 3px;
       border-radius: 99px;
       background: var(--accent);
     }
@@ -597,6 +606,41 @@
     /* ─── DIVIDERS & MISC ─── */
     select.input-base { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a39f' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
     [data-theme="dark"] select.input-base { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737370' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); }
+
+    /* ─── MOBILE POLISH ─── */
+    @media (max-width: 480px) {
+      .card { border-radius: 12px; padding: 16px 14px; }
+      .grid-2 { grid-template-columns: 1fr !important; }
+      .page-title { font-size: 1.35rem; }
+      .page-header { margin-bottom: 18px; }
+    }
+
+    /* ─── NOTIFICATIONS ─── */
+    .notif-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+      background: linear-gradient(135deg, var(--accent), rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.82));
+      color: white; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      animation: notifSlideDown 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+    @keyframes notifSlideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .notif-banner-icon { font-size: 22px; flex-shrink: 0; }
+    .notif-banner-body { flex: 1; min-width: 0; }
+    .notif-banner-title { font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .notif-banner-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .notif-banner-close { background: rgba(255,255,255,0.25); border: none; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; flex-shrink: 0; transition: background 0.15s; }
+    .notif-banner-close:hover { background: rgba(255,255,255,0.4); }
+    .notif-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .notif-toggle-row:last-child { border-bottom: none; }
+    .notif-toggle-label { font-size: 14px; color: var(--text); font-weight: 500; }
+    .notif-toggle-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .toggle-switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-thumb { position: absolute; inset: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; cursor: pointer; transition: all 0.2s ease; }
+    .toggle-thumb::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; background: var(--text-dim); border-radius: 50%; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-switch input:checked + .toggle-thumb { background: var(--accent); border-color: var(--accent); }
+    .toggle-switch input:checked + .toggle-thumb::after { left: calc(100% - 21px); background: white; }
 
     .install-banner {
       display: none;
@@ -958,9 +1002,10 @@
       .countdown-card { justify-content: space-between; width: 100%; }
       .bottom-nav {
         justify-content: space-around;
-        padding: 8px 8px calc(14px + env(safe-area-inset-bottom, 0px));
+        padding: 4px 0 calc(14px + env(safe-area-inset-bottom, 0px));
       }
-      .tab-btn { min-width: 0; flex: 1; max-width: 72px; font-size: 9px; }
+      .tab-btn { min-width: 0; flex: 1; max-width: 80px; }
+      .tab-btn span.icon { width: 40px; height: 26px; }
       .tab-btn .tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .toast-host { left: 16px; right: 16px; top: 12px; max-width: none; }
     }
@@ -1340,6 +1385,67 @@
       );
     }
 
+    // ─── NOTIFICATION SYSTEM ───
+    const NOTIF_KEY = 'gs_notif_prefs';
+    const defaultNotifPrefs = () => ({ enabled: false, morning: true, evening: true, studyReminder: true, streakAlert: true });
+    const getNotifPrefs = () => {
+      try { const s = localStorage.getItem(NOTIF_KEY); return s ? { ...defaultNotifPrefs(), ...JSON.parse(s) } : defaultNotifPrefs(); }
+      catch(e2) { return defaultNotifPrefs(); }
+    };
+    const saveNotifPrefs = (prefs) => { try { localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs)); } catch(e2) {} };
+    const notifAllowed = () => typeof Notification !== 'undefined' && Notification.permission === 'granted';
+
+    let notifTimers = [];
+    const clearNotifTimers = () => { notifTimers.forEach(t => clearTimeout(t)); notifTimers = []; };
+
+    const msUntil = (h, m) => {
+      var now = new Date(), target = new Date(now);
+      target.setHours(h, m || 0, 0, 0);
+      var diff = target - now;
+      if (diff <= 0) diff += 86400000;
+      return diff;
+    };
+
+    const fireNotif = (title, body) => {
+      if (!notifAllowed()) return;
+      try {
+        var n = new Notification(title, { body: body, tag: 'grand-strategy', renotify: true });
+        n.onclick = function() { window.focus(); n.close(); };
+        setTimeout(function() { n.close(); }, 8000);
+      } catch(e2) {}
+    };
+
+    const scheduleNotifications = (prefs) => {
+      clearNotifTimers();
+      if (!prefs || !prefs.enabled || !notifAllowed()) return;
+      if (prefs.morning)        notifTimers.push(setTimeout(function() { fireNotif('🌅 Plan your day, Commander', 'Open Grand Strategy to set today\'s study targets.'); }, msUntil(8,0)));
+      if (prefs.studyReminder)  notifTimers.push(setTimeout(function() { fireNotif('⚡ Deploy your forces', 'Time to log a study session. Keep the momentum going!'); }, msUntil(13,0)));
+      if (prefs.streakAlert)    notifTimers.push(setTimeout(function() { fireNotif('🔥 Streak at risk!', 'Log at least one study session today to protect your streak.'); }, msUntil(20,0)));
+      if (prefs.evening)        notifTimers.push(setTimeout(function() { fireNotif('📓 Journal time', 'Reflect on today\'s battles. Write your evening entry.'); }, msUntil(21,0)));
+    };
+
+    var bannerPush = null;
+    var showBanner = function(icon, title, sub) { if (bannerPush) bannerPush({ icon: icon, title: title, sub: sub, id: Date.now() }); };
+
+    function NotifBanner() {
+      var _s = useState(null), banner = _s[0], setBanner = _s[1];
+      useEffect(function() {
+        bannerPush = function(b) { setBanner(b); setTimeout(function() { setBanner(null); }, 6000); };
+        return function() { bannerPush = null; };
+      }, []);
+      if (!banner) return null;
+      return (
+        <div className="notif-banner" role="alert">
+          <div className="notif-banner-icon">{banner.icon}</div>
+          <div className="notif-banner-body">
+            <div className="notif-banner-title">{banner.title}</div>
+            {banner.sub && <div className="notif-banner-sub">{banner.sub}</div>}
+          </div>
+          <button className="notif-banner-close" onClick={function() { setBanner(null); }} aria-label="Dismiss">✕</button>
+        </div>
+      );
+    }
+
     function PageHeader({ eyebrow, title, description, action }) {
       return (
         <header className="page-header">
@@ -1635,8 +1741,37 @@
 
       const handleSignOut = async () => {
         const { auth, signOut } = fb();
+        clearNotifTimers();
         await signOut(auth);
       };
+
+      // Schedule push notifications once on mount
+      useEffect(() => {
+        scheduleNotifications(getNotifPrefs());
+        return () => clearNotifTimers();
+      }, []);
+
+      // In-app banner checks every 5 min
+      useEffect(() => {
+        const check = () => {
+          const prefs = getNotifPrefs();
+          if (!prefs.enabled) return;
+          const h = new Date().getHours();
+          const todayHours = state.sessions.filter(s => s.date === todayStr()).reduce((a, s) => a + s.hours, 0);
+          const goal = getDailyGoal(state);
+          const key = 'gs_shown_' + todayStr();
+          let shown = {}; try { shown = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e2) {}
+          const save = (k) => { shown[k] = true; try { localStorage.setItem(key, JSON.stringify(shown)); } catch(e2) {} };
+          if (h >= 8 && h < 10 && prefs.morning && !shown.am)       { showBanner('🌅', 'Good morning, Commander!', 'Plan your study targets for today.'); save('am'); }
+          if (h >= 13 && h < 15 && prefs.studyReminder && !shown.pm) { showBanner('⚡', 'Deploy your forces', 'Log a study session to keep momentum going!'); save('pm'); }
+          if (h >= 20 && todayHours === 0 && (state.streak||0) > 0 && prefs.streakAlert && !shown.streak) { showBanner('🔥', 'Streak at risk!', `Log a session to protect your ${state.streak}-day streak.`); save('streak'); }
+          if (h >= 21 && prefs.evening && !shown.eve)               { showBanner('📓', 'Journal time', 'Reflect on today before you wind down.'); save('eve'); }
+          if (todayHours >= goal && prefs.studyReminder && !shown.goal) { showBanner('🎯', 'Daily goal hit!', `${todayHours.toFixed(1)}h logged — outstanding work, Commander!`); save('goal'); }
+        };
+        check();
+        const iv = setInterval(check, 5 * 60 * 1000);
+        return () => clearInterval(iv);
+      }, [state]);
 
       // ── Isolated clock component so only it re-renders every second ──
 
@@ -1740,6 +1875,7 @@
         <div className="app-layout">
           {!cloudLoaded && <div style={{position:'fixed',inset:0,zIndex:9999}}><SplashScreen label="Syncing your data…" /></div>}
           <ToastHost />
+          <NotifBanner />
           {/* Desktop Sidebar */}
           <aside className="sidebar">
             <div className="sidebar-brand">
@@ -1781,6 +1917,10 @@
                   <div className="font-syne" style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>Grand Strategy</div>
                   <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{tabById[tab]?.label || 'Overview'}</div>
                 </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {notifAllowed() && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--success)", flexShrink: 0 }} title="Notifications on" />}
+                <button type="button" style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16, color: "var(--text-muted)", transition: "all 0.15s" }} onClick={() => switchTab('settings')} aria-label="Settings">⚙️</button>
               </div>
             </header>
             <div key={tab} className="page-enter">
@@ -3737,6 +3877,52 @@
       const [importMsg, setImportMsg] = useState("");
       const [goalInput, setGoalInput] = useState(String(getDailyGoal(state)));
       const [goalSaved, setGoalSaved] = useState(false);
+      const [notifPrefs, setNotifPrefsState] = useState(getNotifPrefs);
+      const [notifPerm, setNotifPerm] = useState(() => typeof Notification !== 'undefined' ? Notification.permission : 'denied');
+
+      const updatePref = (key, val) => {
+        haptic('tick');
+        setNotifPrefsState(prev => {
+          const next = { ...prev, [key]: val };
+          saveNotifPrefs(next);
+          scheduleNotifications(next);
+          return next;
+        });
+      };
+
+      const requestPerm = async () => {
+        haptic('medium');
+        if (typeof Notification === 'undefined') { showToast("Notifications not supported on this browser.", "error"); return; }
+        const perm = await Notification.requestPermission();
+        setNotifPerm(perm);
+        if (perm === 'granted') {
+          const next = { ...notifPrefs, enabled: true };
+          setNotifPrefsState(next);
+          saveNotifPrefs(next);
+          scheduleNotifications(next);
+          haptic('success');
+          showToast("Notifications enabled! 🔔", "success");
+          setTimeout(() => fireNotif('🎯 Grand Strategy', 'You\'ll now receive daily study reminders and streak alerts.'), 600);
+        } else {
+          haptic('error');
+          showToast("Permission denied — enable notifications in browser settings.", "error");
+        }
+      };
+
+      function ToggleRow({ id, icon, label, sub, checked, onChange }) {
+        return (
+          <div className="notif-toggle-row">
+            <div>
+              <div className="notif-toggle-label">{icon} {label}</div>
+              <div className="notif-toggle-sub">{sub}</div>
+            </div>
+            <label className="toggle-switch" htmlFor={id}>
+              <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+              <span className="toggle-thumb" />
+            </label>
+          </div>
+        );
+      }
 
       useEffect(() => {
         setGoalInput(String(getDailyGoal(state)));
@@ -3861,6 +4047,54 @@
               </p>
               <ThemeToggle />
             </div>
+          </div>
+
+          {/* ── Notifications ── */}
+          <div className="card" style={{ marginBottom: 24 }}>
+            <span className="subtitle">Reminders & Notifications</span>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+              Daily reminders to study, plan your day, journal at night, and guard your streak.
+            </p>
+            {notifPerm !== 'granted' ? (
+              <div>
+                <div style={{ padding: "14px 16px", background: "var(--accent-soft)", borderRadius: 10, border: "1px solid var(--accent-mid)", marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>🔔 Enable push notifications</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 12 }}>
+                    Get reminded at 8 AM to plan your day, 1 PM to study, 8 PM if your streak is at risk, and 9 PM to write your journal.
+                  </div>
+                  <button className="btn primary" style={{ width: "auto", padding: "10px 22px" }} onClick={requestPerm}>Allow Notifications</button>
+                </div>
+                {notifPerm === 'denied' && <p style={{ fontSize: 12, color: "var(--danger)" }}>⚠️ Permission blocked. Enable notifications for this site in browser settings, then refresh.</p>}
+              </div>
+            ) : (
+              <div className="grid-2" style={{ alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "var(--success-soft)", border: "1px solid rgba(45,134,83,0.25)", borderRadius: 8, marginBottom: 14 }}>
+                    <span>✓</span><span style={{ fontSize: 12, fontWeight: 600, color: "var(--success)" }}>Notifications active</span>
+                  </div>
+                  <ToggleRow id="n-morning" icon="🌅" label="Morning plan" sub="8:00 AM — Plan your study day" checked={notifPrefs.morning} onChange={v => updatePref('morning', v)} />
+                  <ToggleRow id="n-study" icon="⚡" label="Study nudge" sub="1:00 PM — Mid-day reminder" checked={notifPrefs.studyReminder} onChange={v => updatePref('studyReminder', v)} />
+                  <ToggleRow id="n-streak" icon="🔥" label="Streak alert" sub="8:00 PM — Warns if streak at risk" checked={notifPrefs.streakAlert} onChange={v => updatePref('streakAlert', v)} />
+                  <ToggleRow id="n-evening" icon="📓" label="Evening journal" sub="9:00 PM — Reflect on your day" checked={notifPrefs.evening} onChange={v => updatePref('evening', v)} />
+                </div>
+                <div>
+                  <div style={{ padding: "14px 16px", background: "var(--bg2)", borderRadius: 10, border: "1px solid var(--border)", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Today's schedule</div>
+                    {[{t:"8:00 AM",l:"Plan your day",a:notifPrefs.morning,i:"🌅"},{t:"1:00 PM",l:"Study reminder",a:notifPrefs.studyReminder,i:"⚡"},{t:"8:00 PM",l:"Streak alert",a:notifPrefs.streakAlert,i:"🔥"},{t:"9:00 PM",l:"Journal entry",a:notifPrefs.evening,i:"📓"}].map(item => (
+                      <div key={item.t} style={{ display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
+                        <span style={{fontSize:15}}>{item.i}</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,fontWeight:600,color:item.a?"var(--text)":"var(--text-dim)"}}>{item.t}</div>
+                          <div style={{fontSize:11,color:"var(--text-dim)"}}>{item.l}</div>
+                        </div>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:item.a?"var(--success)":"var(--bg3)",border:"1px solid var(--border)"}} />
+                      </div>
+                    ))}
+                  </div>
+                  <button className="btn" style={{fontSize:12,padding:"9px 14px"}} onClick={() => { haptic('light'); fireNotif('🧪 Test','Grand Strategy notifications are working!'); showToast("Test notification sent!","info"); }}>Send test notification</button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid-2">
